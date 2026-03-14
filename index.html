@@ -499,6 +499,7 @@
     border-radius: 50%;
     background: radial-gradient(circle, rgba(180,140,255,0.25), transparent 70%);
     animation: orbBreath 3s ease-in-out infinite;
+    z-index: 2;
   }
   .ty-orb::after {
     content: '';
@@ -511,6 +512,7 @@
       0 0 80px rgba(140,100,220,0.15),
       inset 0 0 30px rgba(200,170,255,0.1);
     animation: orbPulse 2s ease-in-out infinite;
+    z-index: 2;
   }
   @keyframes orbAppear {
     from { opacity: 0; transform: scale(0.3); }
@@ -529,6 +531,7 @@
   .ty-orb .orbit-ring {
     position: absolute;
     inset: -25px;
+    z-index: 1;
   }
   .ty-orb .orbit-dot {
     position: absolute;
@@ -536,7 +539,6 @@
     border-radius: 50%;
     background: rgba(200,170,255,0.7);
     box-shadow: 0 0 6px rgba(180,140,255,0.5);
-    transition: none;
   }
 
   /* Text entrance */
@@ -1432,8 +1434,12 @@ if (!gl) {
         d.el.style.top = (50 + y3) + '%';
         d.el.style.width = s + 'px';
         d.el.style.height = s + 'px';
-        d.el.style.opacity = (0.3 + 0.6 * depthScale).toFixed(2);
-        d.el.style.boxShadow = '0 0 ' + (4 + 4 * depthScale).toFixed(0) + 'px rgba(180,140,255,' + (0.3 + 0.4 * depthScale).toFixed(2) + ')';
+        var inFront = z2 > 0;
+        d.el.style.opacity = inFront ? (0.4 + 0.5 * depthScale).toFixed(2) : (0.15 + 0.15 * depthScale).toFixed(2);
+        d.el.style.zIndex = inFront ? 3 : 1;
+        d.el.style.boxShadow = inFront
+          ? '0 0 ' + (4 + 4 * depthScale).toFixed(0) + 'px rgba(180,140,255,' + (0.3 + 0.4 * depthScale).toFixed(2) + ')'
+          : 'none';
       }
       orbitAnim = requestAnimationFrame(animateOrbits);
     }
