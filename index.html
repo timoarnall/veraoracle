@@ -1233,7 +1233,7 @@ if (!gl) {
         <div class="orbit-ring" id="tyOrbitRing"></div>
       </div>
       <div class="ty-text">
-        <h3>Thank you</h3>
+        <h3 id="tyHeading">Thank you</h3>
       </div>
       <div class="ty-text ty-text-delay">
         <p class="ty-msg">Your request has been received.<br>We'll be in touch soon to confirm your reading.</p>
@@ -1382,6 +1382,9 @@ if (!gl) {
       setTimeout(() => { submitBtn.textContent = 'Request Booking'; }, 3000);
       return;
     }
+
+    var firstName = name.split(' ')[0];
+    document.getElementById('tyHeading').textContent = 'Thank you' + (firstName ? ' ' + firstName : '');
 
     formDiv.style.display = 'none';
     thankDiv.style.display = 'block';
