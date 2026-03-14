@@ -824,6 +824,7 @@ if (!gl) {
 
     void main() {
       vec2 p = (gl_FragCoord.xy - 0.5 * u_resolution) / min(u_resolution.x, u_resolution.y);
+      p.y -= 0.12; // shift aura center up to align with title
       float t = u_time * 0.08;
       float scrollPhase = u_scroll * 0.002;
       float energy = u_energy;
