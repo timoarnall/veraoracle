@@ -158,6 +158,30 @@
       0 0 80px rgba(200,160,255,0.08);
   }
 
+  .instagram {
+    position: fixed;
+    bottom: 2rem;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10;
+    opacity: 0;
+    animation: fadeIn 3s ease-out 2.5s forwards;
+    pointer-events: auto;
+  }
+  .instagram a {
+    display: block;
+    color: rgba(255,255,255,0.25);
+    transition: color 0.4s ease;
+    line-height: 0;
+  }
+  .instagram a:hover {
+    color: rgba(255,255,255,0.6);
+  }
+  .instagram svg {
+    width: 18px;
+    height: 18px;
+  }
+
   @keyframes fadeIn {
     to { opacity: 1; }
   }
@@ -662,6 +686,7 @@
     <a href="#book" id="bookBtn">Book a Reading</a>
   </div>
 </div>
+<div class="instagram"><a href="https://www.instagram.com/veraoracle/" target="_blank" rel="noopener" aria-label="Instagram"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="5"/><circle cx="17.5" cy="6.5" r="0.5" fill="currentColor" stroke="none"/></svg></a></div>
 <div class="reveal" id="reveal">
   <p>You were meant<br>to find this</p>
 </div>
