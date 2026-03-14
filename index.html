@@ -236,7 +236,7 @@
     backdrop-filter: blur(60px) saturate(1.4);
     -webkit-backdrop-filter: blur(60px) saturate(1.4);
     border-radius: 24px;
-    padding: 36px 28px 32px;
+    padding: 28px 24px 24px;
     z-index: 1;
   }
 
@@ -275,15 +275,8 @@
     color: rgba(255,255,255,0.5);
     font-size: 0.8rem;
     text-align: center;
-    margin: 6px 0 0;
+    margin: 6px 0 18px;
     letter-spacing: 0.03em;
-  }
-  .booking-modal .ornament {
-    text-align: center;
-    color: rgba(200,160,255,0.35);
-    font-size: 0.7rem;
-    letter-spacing: 6px;
-    margin: 14px 0 20px;
   }
 
   /* Staggered field entrance */
@@ -308,13 +301,12 @@
   .booking-modal label {
     display: block;
     color: rgba(255,255,255,0.55);
-    font-size: 0.7rem;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    margin-bottom: 5px;
+    font-size: 0.75rem;
+    letter-spacing: 0.02em;
+    margin-bottom: 4px;
   }
   .booking-modal .field + .field {
-    margin-top: 14px;
+    margin-top: 10px;
   }
   .booking-modal input,
   .booking-modal textarea {
@@ -331,8 +323,9 @@
     color: #fff;
     font-family: inherit;
     font-size: 0.9rem;
-    padding: 11px 14px;
+    padding: 9px 12px;
     outline: none;
+    min-height: 0;
     transition: border-color 0.4s ease, background 0.4s ease, box-shadow 0.4s ease;
     -webkit-appearance: none;
   }
@@ -353,7 +346,11 @@
   }
   .booking-modal textarea {
     resize: vertical;
-    min-height: 60px;
+    min-height: 50px;
+  }
+  .booking-modal input[type="date"] {
+    min-height: 0;
+    line-height: 1.2;
   }
   .booking-modal .row {
     display: flex;
@@ -368,8 +365,8 @@
 
   .booking-modal .submit-btn {
     width: 100%;
-    margin-top: 22px;
-    padding: 13px;
+    margin-top: 16px;
+    padding: 12px;
     border: 1px solid rgba(200,160,255,0.15);
     border-radius: 980px;
     background: linear-gradient(135deg, rgba(160,120,255,0.1), rgba(120,160,255,0.08));
@@ -1007,14 +1004,16 @@ if (!gl) {
       let energyLevel = 0.0;
       let prevPointerX = 0.5, prevPointerY = 0.5;
 
+      var isTouch = 'ontouchstart' in window;
+      var energyMult = isTouch ? 6.0 : 3.0;  // Touch fires less often, boost each event
+
       function updatePointerPos(x, y) {
         targetTouchX = x / window.innerWidth;
         targetTouchY = 1.0 - y / window.innerHeight;
-        // Movement speed → energy
-        const dx = targetTouchX - prevPointerX;
-        const dy = targetTouchY - prevPointerY;
-        const speed = Math.sqrt(dx * dx + dy * dy);
-        energyLevel = Math.min(energyLevel + speed * 3.0, 1.5);
+        var dx = targetTouchX - prevPointerX;
+        var dy = targetTouchY - prevPointerY;
+        var speed = Math.sqrt(dx * dx + dy * dy);
+        energyLevel = Math.min(energyLevel + speed * energyMult, 1.5);
         movePhase += speed * 8.0;
         prevPointerX = targetTouchX;
         prevPointerY = targetTouchY;
@@ -1068,11 +1067,12 @@ if (!gl) {
 
         touchX += (targetTouchX - touchX) * 0.08;
         touchY += (targetTouchY - touchY) * 0.08;
-        touchActive += (targetTouchActive - touchActive) * 0.012;
+        touchActive += (targetTouchActive - touchActive) * (isTouch ? 0.06 : 0.012);
         if (touchActive < 0.003) touchActive = 0.0;
 
         trailTimer++;
-        if (pointerMoving && trailTimer % 3 === 0) {
+        var trailInterval = isTouch ? 1 : 3;
+        if (pointerMoving && trailTimer % trailInterval === 0) {
           trail[trailHead].x = touchX;
           trail[trailHead].y = touchY;
           trail[trailHead].intensity = pointerDown ? 1.0 : 0.5;
@@ -1126,18 +1126,13 @@ if (!gl) {
     <div id="bookingForm">
       <h2>Book a Reading</h2>
       <p class="subtitle">We'll be in touch to confirm your session</p>
-      <div class="ornament">* * *</div>
       <div class="field">
         <label>Name</label>
         <input type="text" id="bk-name" placeholder="Your name" autocomplete="name">
       </div>
       <div class="field">
-        <label>Email <span class="hint">or phone below</span></label>
-        <input type="email" id="bk-email" placeholder="your@email.com" autocomplete="email">
-      </div>
-      <div class="field">
-        <label>Phone</label>
-        <input type="tel" id="bk-phone" placeholder="Your phone number" autocomplete="tel">
+        <label>Email or phone</label>
+        <input type="text" id="bk-contact" placeholder="your@email.com or phone number" autocomplete="email">
       </div>
       <div class="field">
         <div class="row">
@@ -1174,6 +1169,7 @@ if (!gl) {
       </div>
       <div class="field">
         <label>Message <span class="hint">optional</span></label>
+
         <textarea id="bk-message" placeholder="Anything you'd like me to know..."></textarea>
       </div>
       <div class="field">
@@ -1221,7 +1217,7 @@ if (!gl) {
 
   // Modal particles
   const particleContainer = document.getElementById('modalParticles');
-  for (let i = 0; i < 12; i++) {
+  for (let i = 0; i < 24; i++) {
     const p = document.createElement('div');
     p.className = 'modal-particle';
     p.style.left = (10 + Math.random() * 80) + '%';
@@ -1238,7 +1234,7 @@ if (!gl) {
 
   // Button sparkles
   const btnSparkleContainer = document.getElementById('btnSparkles');
-  for (let i = 0; i < 10; i++) {
+  for (let i = 0; i < 16; i++) {
     const s = document.createElement('div');
     s.className = 'btn-sparkle';
     s.style.left = (Math.random() * 100) + '%';
@@ -1274,8 +1270,7 @@ if (!gl) {
       bookingSubmitted = false;
       cleanCelebration();
       document.getElementById('bk-name').value = '';
-      document.getElementById('bk-email').value = '';
-      document.getElementById('bk-phone').value = '';
+      document.getElementById('bk-contact').value = '';
       document.getElementById('bk-date').value = '';
       document.getElementById('bk-time').value = '';
       document.getElementById('bk-type').value = '';
@@ -1291,19 +1286,23 @@ if (!gl) {
 
   // Submit
   submitBtn.addEventListener('click', async function() {
-    const name  = document.getElementById('bk-name').value.trim();
-    const email = document.getElementById('bk-email').value.trim();
-    const phone = document.getElementById('bk-phone').value.trim();
-    const date  = document.getElementById('bk-date').value;
-    const time  = document.getElementById('bk-time').value;
-    const type  = document.getElementById('bk-type').value;
-    const msg   = document.getElementById('bk-message').value.trim();
+    const name    = document.getElementById('bk-name').value.trim();
+    const contact = document.getElementById('bk-contact').value.trim();
+    const date    = document.getElementById('bk-date').value;
+    const time    = document.getElementById('bk-time').value;
+    const type    = document.getElementById('bk-type').value;
+    const msg     = document.getElementById('bk-message').value.trim();
 
-    if (!name || (!email && !phone)) {
+    if (!name || !contact) {
       submitBtn.textContent = !name ? 'Please enter your name' : 'Please enter email or phone';
       setTimeout(() => { submitBtn.textContent = 'Request Booking'; }, 2000);
       return;
     }
+
+    // Detect if contact is email or phone
+    const isEmail = contact.includes('@');
+    const email = isEmail ? contact : null;
+    const phone = isEmail ? null : contact;
 
     submitBtn.disabled = true;
     submitBtn.textContent = 'Sending...';
@@ -1312,8 +1311,8 @@ if (!gl) {
       .from('booking_requests')
       .insert({
         name: name,
-        email: email || null,
-        phone: phone || null,
+        email: email,
+        phone: phone,
         preferred_date: date || null,
         preferred_time: time || null,
         reading_type: type || null,
