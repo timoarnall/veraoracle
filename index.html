@@ -1014,7 +1014,7 @@ if (!gl) {
         var dy = targetTouchY - prevPointerY;
         var speed = Math.sqrt(dx * dx + dy * dy);
         energyLevel = Math.min(energyLevel + speed * energyMult, 1.5);
-        movePhase += speed * 8.0;
+        movePhase += speed * 25.0;
         prevPointerX = targetTouchX;
         prevPointerY = targetTouchY;
         pointerMoving = true;
@@ -1065,8 +1065,8 @@ if (!gl) {
       function render() {
         const elapsed = (performance.now() - startTime) / 1000.0;
 
-        touchX += (targetTouchX - touchX) * 0.08;
-        touchY += (targetTouchY - touchY) * 0.08;
+        touchX += (targetTouchX - touchX) * 0.15;
+        touchY += (targetTouchY - touchY) * 0.15;
         touchActive += (targetTouchActive - touchActive) * (isTouch ? 0.06 : 0.012);
         if (touchActive < 0.003) touchActive = 0.0;
 
@@ -1087,7 +1087,7 @@ if (!gl) {
 
         // Fade touchActive when mouse stops
         if (!pointerDown) targetTouchActive *= 0.96;
-        energyLevel *= 0.96;
+        energyLevel *= 0.97;
         if (energyLevel < 0.001) energyLevel = 0.0;
 
         // Reveal after enough interaction
