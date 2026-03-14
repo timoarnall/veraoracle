@@ -1235,9 +1235,7 @@ if (!gl) {
       submitBtn.textContent = 'Request Booking';
     }, 500);
   }
-  document.getElementById('bookingClose').addEventListener('click', function() {
-    if (bookingSubmitted) closeModal();
-  });
+  document.getElementById('bookingClose').addEventListener('click', closeModal);
   overlay.addEventListener('click', function(e) {
     if (e.target === overlay && bookingSubmitted) closeModal();
   });
