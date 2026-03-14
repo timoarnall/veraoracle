@@ -1236,18 +1236,19 @@ if (!gl) {
 
   // Button sparkles
   const btnSparkleContainer = document.getElementById('btnSparkles');
-  for (let i = 0; i < 16; i++) {
+  var btnSparkleCount = ('ontouchstart' in window) ? 30 : 16;
+  for (let i = 0; i < btnSparkleCount; i++) {
     const s = document.createElement('div');
     s.className = 'btn-sparkle';
     s.style.left = (Math.random() * 100) + '%';
     s.style.top = (Math.random() * 100) + '%';
-    const size = 1.5 + Math.random() * 2;
+    const size = 1.5 + Math.random() * 2.5;
     s.style.width = size + 'px';
     s.style.height = size + 'px';
-    s.style.setProperty('--bs-dur', (1.2 + Math.random() * 2) + 's');
-    s.style.setProperty('--bs-delay', (Math.random() * 3) + 's');
-    s.style.setProperty('--bs-peak', (0.4 + Math.random() * 0.5).toString());
-    s.style.boxShadow = '0 0 ' + (3 + Math.random() * 4) + 'px rgba(200,170,255,' + (0.4 + Math.random() * 0.4) + ')';
+    s.style.setProperty('--bs-dur', (0.8 + Math.random() * 1.5) + 's');
+    s.style.setProperty('--bs-delay', (Math.random() * 2) + 's');
+    s.style.setProperty('--bs-peak', (0.5 + Math.random() * 0.5).toString());
+    s.style.boxShadow = '0 0 ' + (4 + Math.random() * 5) + 'px rgba(200,170,255,' + (0.5 + Math.random() * 0.5) + ')';
     btnSparkleContainer.appendChild(s);
   }
 
