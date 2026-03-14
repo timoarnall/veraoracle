@@ -843,9 +843,6 @@ if (!gl) {
           <label>Preferred time</label>
           <select id="bk-time">
             <option value="">Any time</option>
-            <option value="morning">Morning</option>
-            <option value="afternoon">Afternoon</option>
-            <option value="evening">Evening</option>
           </select>
         </div>
       </div>
@@ -885,6 +882,19 @@ if (!gl) {
   const SUPABASE_URL = 'https://odqnbtnbbvqktaqejuxh.supabase.co';
   const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9kcW5idG5iYnZxa3RhcWVqdXhoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM0MjI3NDIsImV4cCI6MjA4ODk5ODc0Mn0.1D-imafIpPFdcBRO2BZAry2h3cQs60dfvOcRJyVYxqA';
   const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  // Populate time slots (15-min intervals, 08:00–22:00) to match Parinameh
+  const timeSelect = document.getElementById('bk-time');
+  for (let h = 8; h <= 22; h++) {
+    for (let m = 0; m < 60; m += 15) {
+      if (h === 22 && m > 0) break;
+      const val = String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0');
+      const opt = document.createElement('option');
+      opt.value = val;
+      opt.textContent = val;
+      timeSelect.appendChild(opt);
+    }
+  }
 
   const overlay  = document.getElementById('bookingOverlay');
   const formDiv  = document.getElementById('bookingForm');
