@@ -1383,6 +1383,13 @@ if (!gl) {
       return;
     }
 
+    // Notify Pari via email (fire-and-forget)
+    fetch('https://odqnbtnbbvqktaqejuxh.supabase.co/functions/v1/notify-booking', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY },
+      body: JSON.stringify({ name: name, email: email, phone: phone, preferred_date: date || null, preferred_time: time || null, reading_type: type || null, message: msg || null }),
+    }).catch(function() {});
+
     var firstName = name.split(' ')[0];
     document.getElementById('tyHeading').textContent = 'Thank you' + (firstName ? ' ' + firstName : '');
 
