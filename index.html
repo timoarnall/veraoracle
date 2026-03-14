@@ -1378,10 +1378,10 @@ if (!gl) {
 
     // Orbit dots
     ring.innerHTML = '';
-    for (let i = 0; i < 5; i++) {
+    for (let i = 0; i < 7; i++) {
       const dot = document.createElement('div');
       dot.className = 'orbit-dot';
-      const angle = (i / 5) * 360;
+      const angle = (i / 7) * 360;
       const rad = angle * Math.PI / 180;
       const r = 50 + Math.random() * 5;
       dot.style.left = (50 + Math.cos(rad) * r) + '%';
