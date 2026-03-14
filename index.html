@@ -525,19 +525,18 @@
     50% { box-shadow: 0 0 60px rgba(160,120,255,0.4), 0 0 100px rgba(140,100,220,0.2), inset 0 0 40px rgba(200,170,255,0.15); }
   }
 
-  /* Ring of tiny orbiting dots around the orb */
+  /* Ring of orbiting dots around the orb */
   .ty-orb .orbit-ring {
     position: absolute;
     inset: -25px;
-    animation: orbitSpin 8s linear infinite;
   }
-  @keyframes orbitSpin { to { transform: rotate(360deg); } }
   .ty-orb .orbit-dot {
     position: absolute;
     width: 3px; height: 3px;
     border-radius: 50%;
     background: rgba(200,170,255,0.7);
     box-shadow: 0 0 6px rgba(180,140,255,0.5);
+    transition: none;
   }
 
   /* Text entrance */
@@ -1387,21 +1386,59 @@ if (!gl) {
     const burst = document.getElementById('tyBurst');
     const ring = document.getElementById('tyOrbitRing');
 
-    // Orbit dots
+    // 3D orbit dots — each on a tilted orbital plane
     ring.innerHTML = '';
+    var orbitDots = [];
     for (let i = 0; i < 7; i++) {
       const dot = document.createElement('div');
       dot.className = 'orbit-dot';
-      const angle = (i / 7) * 360;
-      const rad = angle * Math.PI / 180;
-      const r = 50 + Math.random() * 5;
-      dot.style.left = (50 + Math.cos(rad) * r) + '%';
-      dot.style.top = (50 + Math.sin(rad) * r) + '%';
-      dot.style.width = (2 + Math.random() * 2) + 'px';
-      dot.style.height = dot.style.width;
-      dot.style.opacity = 0.4 + Math.random() * 0.5;
+      const size = 2 + Math.random() * 2;
+      dot.style.width = size + 'px';
+      dot.style.height = size + 'px';
       ring.appendChild(dot);
+      orbitDots.push({
+        el: dot,
+        phase: (i / 7) * Math.PI * 2,
+        speed: 0.4 + Math.random() * 0.3,
+        tiltX: (Math.random() - 0.5) * 1.2,  // orbital plane tilt
+        tiltZ: (Math.random() - 0.5) * 1.0,
+        radius: 48 + Math.random() * 8,
+        size: size,
+      });
     }
+    // Animate orbits
+    var orbitAnim = null;
+    function animateOrbits() {
+      var t = performance.now() * 0.001;
+      for (var i = 0; i < orbitDots.length; i++) {
+        var d = orbitDots[i];
+        var a = d.phase + t * d.speed;
+        // Position on circle
+        var x = Math.cos(a) * d.radius;
+        var y = Math.sin(a) * d.radius;
+        var z = 0;
+        // Tilt around X axis
+        var cosX = Math.cos(d.tiltX), sinX = Math.sin(d.tiltX);
+        var y2 = y * cosX - z * sinX;
+        var z2 = y * sinX + z * cosX;
+        // Tilt around Z axis
+        var cosZ = Math.cos(d.tiltZ), sinZ = Math.sin(d.tiltZ);
+        var x2 = x * cosZ - y2 * sinZ;
+        var y3 = x * sinZ + y2 * cosZ;
+        // z2 is depth — use for size and opacity (front = bigger/brighter)
+        var depthScale = 0.6 + 0.4 * ((z2 / d.radius) * 0.5 + 0.5);
+        var s = d.size * depthScale;
+        d.el.style.left = (50 + x2) + '%';
+        d.el.style.top = (50 + y3) + '%';
+        d.el.style.width = s + 'px';
+        d.el.style.height = s + 'px';
+        d.el.style.opacity = (0.3 + 0.6 * depthScale).toFixed(2);
+        d.el.style.boxShadow = '0 0 ' + (4 + 4 * depthScale).toFixed(0) + 'px rgba(180,140,255,' + (0.3 + 0.4 * depthScale).toFixed(2) + ')';
+      }
+      orbitAnim = requestAnimationFrame(animateOrbits);
+    }
+    animateOrbits();
+    ring._stopOrbit = function() { cancelAnimationFrame(orbitAnim); };
 
     // Burst sparks from center
     burst.innerHTML = '';
@@ -1451,7 +1488,9 @@ if (!gl) {
 
   function cleanCelebration() {
     document.getElementById('tyBurst').innerHTML = '';
-    document.getElementById('tyOrbitRing').innerHTML = '';
+    var ring = document.getElementById('tyOrbitRing');
+    if (ring._stopOrbit) ring._stopOrbit();
+    ring.innerHTML = '';
   }
 })();
 </script>
