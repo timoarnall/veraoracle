@@ -187,146 +187,291 @@
     width: 100%; height: 100%;
     z-index: 100;
     display: flex;
-    align-items: flex-end;
+    align-items: center;
     justify-content: center;
-    background: rgba(0,0,0,0.5);
+    background: rgba(0,0,0,0.6);
     opacity: 0;
     pointer-events: none;
-    transition: opacity 0.4s ease;
+    transition: opacity 0.5s ease;
   }
   .booking-overlay.active {
     opacity: 1;
     pointer-events: auto;
   }
+
   .booking-modal {
-    width: 100%;
-    max-width: 440px;
-    max-height: 90vh;
+    position: relative;
+    width: calc(100% - 32px);
+    max-width: 400px;
+    max-height: 88vh;
     overflow-y: auto;
-    background: rgba(20,16,28,0.92);
-    backdrop-filter: blur(40px);
-    -webkit-backdrop-filter: blur(40px);
-    border: 1px solid rgba(255,255,255,0.08);
-    border-bottom: none;
-    border-radius: 20px 20px 0 0;
-    padding: 32px 28px 40px;
-    transform: translateY(100%);
-    transition: transform 0.45s cubic-bezier(0.16,1,0.3,1);
+    overflow-x: hidden;
+    background: rgba(12,8,20,0.85);
+    backdrop-filter: blur(60px) saturate(1.4);
+    -webkit-backdrop-filter: blur(60px) saturate(1.4);
+    border-radius: 24px;
+    padding: 36px 28px 32px;
+    transform: scale(0.92) translateY(20px);
+    opacity: 0;
+    transition: transform 0.5s cubic-bezier(0.16,1,0.3,1),
+                opacity 0.4s ease;
   }
   .booking-overlay.active .booking-modal {
-    transform: translateY(0);
+    transform: scale(1) translateY(0);
+    opacity: 1;
   }
+
+  /* Shimmer border */
+  .booking-modal::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 24px;
+    padding: 1px;
+    background: conic-gradient(
+      from var(--shimmer-angle, 0deg),
+      transparent 0%,
+      rgba(200,160,255,0.3) 10%,
+      transparent 20%,
+      transparent 50%,
+      rgba(140,180,255,0.2) 60%,
+      transparent 70%
+    );
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    animation: shimmerRotate 4s linear infinite;
+    pointer-events: none;
+  }
+  @keyframes shimmerRotate {
+    to { --shimmer-angle: 360deg; }
+  }
+  @property --shimmer-angle {
+    syntax: '<angle>';
+    initial-value: 0deg;
+    inherits: false;
+  }
+
+  /* Floating particles inside modal */
+  .modal-particles {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+    overflow: hidden;
+    border-radius: 24px;
+  }
+  .modal-particle {
+    position: absolute;
+    width: 2px; height: 2px;
+    border-radius: 50%;
+    background: rgba(200,160,255,0.6);
+    opacity: 0;
+    animation: particleFloat var(--p-dur) var(--p-delay) ease-in-out infinite;
+  }
+  @keyframes particleFloat {
+    0% { opacity: 0; transform: translateY(0) scale(0); }
+    15% { opacity: var(--p-peak); transform: scale(1); }
+    85% { opacity: var(--p-peak); }
+    100% { opacity: 0; transform: translateY(calc(var(--p-drift) * -1)) scale(0); }
+  }
+
   .booking-modal h2 {
-    font-size: 1.5rem;
+    font-size: 1.4rem;
     font-weight: 600;
     letter-spacing: -0.01em;
-    margin: 0 0 4px;
+    margin: 0;
+    text-align: center;
   }
   .booking-modal .subtitle {
-    color: rgba(255,255,255,0.35);
-    font-size: 0.85rem;
-    margin-bottom: 24px;
+    color: rgba(255,255,255,0.3);
+    font-size: 0.8rem;
+    text-align: center;
+    margin: 6px 0 0;
+    letter-spacing: 0.03em;
   }
+  .booking-modal .ornament {
+    text-align: center;
+    color: rgba(200,160,255,0.25);
+    font-size: 0.7rem;
+    letter-spacing: 6px;
+    margin: 14px 0 20px;
+  }
+
+  /* Staggered field entrance */
+  .booking-modal .field {
+    opacity: 0;
+    transform: translateY(12px);
+    transition: opacity 0.4s ease, transform 0.4s ease;
+  }
+  .booking-overlay.active .booking-modal .field {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  .booking-overlay.active .field:nth-child(1) { transition-delay: 0.08s; }
+  .booking-overlay.active .field:nth-child(2) { transition-delay: 0.13s; }
+  .booking-overlay.active .field:nth-child(3) { transition-delay: 0.18s; }
+  .booking-overlay.active .field:nth-child(4) { transition-delay: 0.23s; }
+  .booking-overlay.active .field:nth-child(5) { transition-delay: 0.28s; }
+  .booking-overlay.active .field:nth-child(6) { transition-delay: 0.33s; }
+  .booking-overlay.active .field:nth-child(7) { transition-delay: 0.38s; }
+  .booking-overlay.active .field:nth-child(8) { transition-delay: 0.43s; }
+
   .booking-modal label {
     display: block;
-    color: rgba(255,255,255,0.4);
-    font-size: 0.75rem;
-    letter-spacing: 0.05em;
-    margin-bottom: 6px;
-    margin-top: 16px;
+    color: rgba(255,255,255,0.35);
+    font-size: 0.7rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 5px;
   }
-  .booking-modal label:first-of-type {
-    margin-top: 0;
+  .booking-modal .field + .field {
+    margin-top: 14px;
   }
   .booking-modal input,
   .booking-modal select,
   .booking-modal textarea {
     width: 100%;
-    background: rgba(255,255,255,0.05);
-    border: 1px solid rgba(255,255,255,0.08);
-    border-radius: 10px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 12px;
     color: #fff;
     font-family: inherit;
-    font-size: 0.95rem;
-    padding: 10px 14px;
+    font-size: 0.9rem;
+    padding: 11px 14px;
     outline: none;
-    transition: border-color 0.3s ease;
+    transition: border-color 0.4s ease, background 0.4s ease, box-shadow 0.4s ease;
     -webkit-appearance: none;
   }
   .booking-modal input:focus,
   .booking-modal select:focus,
   .booking-modal textarea:focus {
-    border-color: rgba(255,255,255,0.2);
+    border-color: rgba(180,140,255,0.25);
+    background: rgba(255,255,255,0.06);
+    box-shadow: 0 0 20px rgba(160,120,255,0.06);
   }
   .booking-modal input::placeholder,
   .booking-modal textarea::placeholder {
-    color: rgba(255,255,255,0.2);
+    color: rgba(255,255,255,0.15);
   }
   .booking-modal select option {
-    background: #1a1424;
+    background: #140e1e;
     color: #fff;
   }
   .booking-modal textarea {
     resize: vertical;
-    min-height: 70px;
+    min-height: 60px;
   }
   .booking-modal .row {
     display: flex;
-    gap: 12px;
+    gap: 10px;
   }
   .booking-modal .row > div {
     flex: 1;
   }
+  .booking-modal .row label {
+    margin-bottom: 5px;
+  }
+
   .booking-modal .submit-btn {
     width: 100%;
-    margin-top: 24px;
-    padding: 12px;
-    border: none;
+    margin-top: 22px;
+    padding: 13px;
+    border: 1px solid rgba(200,160,255,0.15);
     border-radius: 980px;
-    background: rgba(255,255,255,0.1);
+    background: linear-gradient(135deg, rgba(160,120,255,0.1), rgba(120,160,255,0.08));
     color: rgba(255,255,255,0.7);
     font-family: inherit;
-    font-size: 0.95rem;
+    font-size: 0.9rem;
     font-weight: 500;
-    letter-spacing: 0.02em;
+    letter-spacing: 0.03em;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all 0.4s ease;
+    position: relative;
+    overflow: hidden;
+  }
+  .booking-modal .submit-btn::before {
+    content: '';
+    position: absolute;
+    top: 50%; left: 50%;
+    width: 120%; height: 0;
+    background: radial-gradient(ellipse, rgba(200,160,255,0.15), transparent 70%);
+    transform: translate(-50%, -50%);
+    transition: height 0.4s ease;
+    pointer-events: none;
   }
   .booking-modal .submit-btn:hover {
-    background: rgba(255,255,255,0.15);
+    border-color: rgba(200,160,255,0.3);
     color: rgba(255,255,255,0.95);
+    box-shadow: 0 0 30px rgba(160,120,255,0.1);
+  }
+  .booking-modal .submit-btn:hover::before {
+    height: 200%;
   }
   .booking-modal .submit-btn:disabled {
-    opacity: 0.4;
+    opacity: 0.35;
     cursor: default;
+    box-shadow: none;
   }
+
   .booking-modal .close-btn {
     position: absolute;
-    top: 16px; right: 16px;
+    top: 14px; right: 14px;
     background: none; border: none;
-    color: rgba(255,255,255,0.3);
-    font-size: 1.3rem;
+    color: rgba(255,255,255,0.2);
+    font-size: 1.2rem;
     cursor: pointer;
     padding: 4px 8px;
     line-height: 1;
-    transition: color 0.2s ease;
+    transition: color 0.3s ease;
+    z-index: 2;
   }
   .booking-modal .close-btn:hover {
-    color: rgba(255,255,255,0.7);
+    color: rgba(255,255,255,0.6);
   }
+
   .booking-modal .thank-you {
     text-align: center;
-    padding: 40px 0;
+    padding: 48px 0 24px;
+    animation: thankYouIn 0.6s ease-out;
+  }
+  .booking-modal .thank-you .ty-symbol {
+    font-size: 2rem;
+    margin-bottom: 16px;
+    opacity: 0.5;
+    animation: tyPulse 2s ease-in-out infinite;
+  }
+  @keyframes tyPulse {
+    0%, 100% { opacity: 0.4; transform: scale(1); }
+    50% { opacity: 0.7; transform: scale(1.05); }
   }
   .booking-modal .thank-you h3 {
     font-size: 1.3rem;
     font-weight: 600;
-    margin-bottom: 8px;
+    margin: 0 0 8px;
   }
   .booking-modal .thank-you p {
-    color: rgba(255,255,255,0.4);
-    font-size: 0.9rem;
-    line-height: 1.5;
+    color: rgba(255,255,255,0.35);
+    font-size: 0.85rem;
+    line-height: 1.6;
+  }
+  @keyframes thankYouIn {
+    from { opacity: 0; transform: scale(0.95) translateY(10px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+  }
+
+  /* Scrollbar */
+  .booking-modal::-webkit-scrollbar { width: 4px; }
+  .booking-modal::-webkit-scrollbar-track { background: transparent; }
+  .booking-modal::-webkit-scrollbar-thumb { background: rgba(200,160,255,0.15); border-radius: 4px; }
+
+  /* Label hint style */
+  .booking-modal .hint {
+    color: rgba(255,255,255,0.15);
+    font-weight: 400;
+    text-transform: none;
+    letter-spacing: 0;
   }
 
   .fallback-bg {
@@ -827,49 +972,66 @@ if (!gl) {
 <div class="booking-overlay" id="bookingOverlay">
   <div class="booking-modal" id="bookingModal">
     <button class="close-btn" id="bookingClose">&times;</button>
+    <div class="modal-particles" id="modalParticles"></div>
     <div id="bookingForm">
       <h2>Book a Reading</h2>
-      <p class="subtitle">Choose your session and we'll be in touch</p>
-      <label>Name</label>
-      <input type="text" id="bk-name" placeholder="Your name" autocomplete="name">
-      <label>Email</label>
-      <input type="email" id="bk-email" placeholder="your@email.com" autocomplete="email">
-      <label>Phone</label>
-      <input type="tel" id="bk-phone" placeholder="Your phone number" autocomplete="tel">
-      <div class="row">
-        <div>
-          <label>Preferred date</label>
-          <input type="date" id="bk-date">
-        </div>
-        <div>
-          <label>Preferred time</label>
-          <select id="bk-time">
-            <option value="">Any time</option>
-          </select>
+      <p class="subtitle">Choose your session and I'll be in touch</p>
+      <div class="ornament">* * *</div>
+      <div class="field">
+        <label>Name</label>
+        <input type="text" id="bk-name" placeholder="Your name" autocomplete="name">
+      </div>
+      <div class="field">
+        <label>Email <span class="hint">or phone below</span></label>
+        <input type="email" id="bk-email" placeholder="your@email.com" autocomplete="email">
+      </div>
+      <div class="field">
+        <label>Phone</label>
+        <input type="tel" id="bk-phone" placeholder="Your phone number" autocomplete="tel">
+      </div>
+      <div class="field">
+        <div class="row">
+          <div>
+            <label>Preferred date</label>
+            <input type="date" id="bk-date">
+          </div>
+          <div>
+            <label>Preferred time</label>
+            <select id="bk-time">
+              <option value="">Any time</option>
+            </select>
+          </div>
         </div>
       </div>
-      <label>Type of reading</label>
-      <select id="bk-type">
-        <option value="">Choose a reading...</option>
-        <option>Career & purpose</option>
-        <option>Love & relationships</option>
-        <option>Family & home</option>
-        <option>Money & abundance</option>
-        <option>Health & wellbeing</option>
-        <option>Grief & loss</option>
-        <option>Spiritual growth</option>
-        <option>Shadow work</option>
-        <option>Year ahead</option>
-        <option>Past life</option>
-        <option>Decision & crossroads</option>
-        <option>Creativity & self-expression</option>
-        <option>Travel & new beginnings</option>
-      </select>
-      <label>Message <span style="color:rgba(255,255,255,0.2)">(optional)</span></label>
-      <textarea id="bk-message" placeholder="Anything you'd like me to know..."></textarea>
-      <button class="submit-btn" id="bk-submit">Request Booking</button>
+      <div class="field">
+        <label>Type of reading <span class="hint">optional</span></label>
+        <select id="bk-type">
+          <option value="">Choose a reading...</option>
+          <option>Career & purpose</option>
+          <option>Love & relationships</option>
+          <option>Family & home</option>
+          <option>Money & abundance</option>
+          <option>Health & wellbeing</option>
+          <option>Grief & loss</option>
+          <option>Spiritual growth</option>
+          <option>Shadow work</option>
+          <option>Year ahead</option>
+          <option>Past life</option>
+          <option>Decision & crossroads</option>
+          <option>Creativity & self-expression</option>
+          <option>Travel & new beginnings</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Message <span class="hint">optional</span></label>
+        <textarea id="bk-message" placeholder="Anything you'd like me to know..."></textarea>
+      </div>
+      <div class="field">
+        <button class="submit-btn" id="bk-submit">Request Booking</button>
+      </div>
     </div>
     <div id="bookingThankYou" class="thank-you" style="display:none">
+      <div class="ty-symbol">&#10022;</div>
       <h3>Thank you</h3>
       <p>Your request has been sent.<br>I'll get back to you soon.</p>
     </div>
@@ -896,6 +1058,23 @@ if (!gl) {
       opt.textContent = val;
       timeSelect.appendChild(opt);
     }
+  }
+
+  // Modal particles
+  const particleContainer = document.getElementById('modalParticles');
+  for (let i = 0; i < 12; i++) {
+    const p = document.createElement('div');
+    p.className = 'modal-particle';
+    p.style.left = (10 + Math.random() * 80) + '%';
+    p.style.top = (10 + Math.random() * 80) + '%';
+    p.style.setProperty('--p-dur', (3 + Math.random() * 4) + 's');
+    p.style.setProperty('--p-delay', (Math.random() * 5) + 's');
+    p.style.setProperty('--p-peak', (0.2 + Math.random() * 0.4).toString());
+    p.style.setProperty('--p-drift', (20 + Math.random() * 40) + 'px');
+    const size = 1.5 + Math.random() * 2;
+    p.style.width = p.style.height = size + 'px';
+    p.style.boxShadow = '0 0 ' + (4 + Math.random() * 6) + 'px rgba(180,140,255,' + (0.3 + Math.random() * 0.4) + ')';
+    particleContainer.appendChild(p);
   }
 
   const overlay  = document.getElementById('bookingOverlay');
