@@ -512,22 +512,26 @@
   }
 
   .thank-you h3 {
-    font-size: 1.4rem;
-    font-weight: 600;
+    font-size: 0.95rem;
+    font-weight: 500;
     margin: 0 0 10px;
-    letter-spacing: -0.01em;
+    letter-spacing: 0.01em;
+    text-align: center;
   }
   .thank-you .ty-msg {
     color: rgba(255,255,255,0.4);
-    font-size: 0.85rem;
+    font-size: 0.95rem;
+    font-weight: 500;
     line-height: 1.7;
-    max-width: 260px;
+    text-align: center;
   }
   .thank-you .ty-note {
     color: rgba(255,255,255,0.2);
-    font-size: 0.72rem;
-    letter-spacing: 0.04em;
+    font-size: 0.95rem;
+    font-weight: 500;
+    letter-spacing: 0.01em;
     margin-top: 16px;
+    text-align: center;
   }
 
   /* Celebration burst particles */
@@ -1208,12 +1212,27 @@ if (!gl) {
     overlay.classList.add('active');
   });
 
-  // Close
-  document.getElementById('bookingClose').addEventListener('click', function() {
+  // Close + reset
+  function closeModal() {
     overlay.classList.remove('active');
-  });
+    setTimeout(function() {
+      formDiv.style.display = 'block';
+      thankDiv.style.display = 'none';
+      cleanCelebration();
+      document.getElementById('bk-name').value = '';
+      document.getElementById('bk-email').value = '';
+      document.getElementById('bk-phone').value = '';
+      document.getElementById('bk-date').value = '';
+      document.getElementById('bk-time').value = '';
+      document.getElementById('bk-type').value = '';
+      document.getElementById('bk-message').value = '';
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Request Booking';
+    }, 500);
+  }
+  document.getElementById('bookingClose').addEventListener('click', closeModal);
   overlay.addEventListener('click', function(e) {
-    if (e.target === overlay) overlay.classList.remove('active');
+    if (e.target === overlay) closeModal();
   });
 
   // Submit
@@ -1264,25 +1283,6 @@ if (!gl) {
 
     // Spawn celebration
     spawnCelebration();
-
-    // Reset after closing
-    setTimeout(() => {
-      overlay.classList.remove('active');
-      setTimeout(() => {
-        formDiv.style.display = 'block';
-        thankDiv.style.display = 'none';
-        cleanCelebration();
-        document.getElementById('bk-name').value = '';
-        document.getElementById('bk-email').value = '';
-        document.getElementById('bk-phone').value = '';
-        document.getElementById('bk-date').value = '';
-        document.getElementById('bk-time').value = '';
-        document.getElementById('bk-type').value = '';
-        document.getElementById('bk-message').value = '';
-        submitBtn.disabled = false;
-        submitBtn.textContent = 'Request Booking';
-      }, 600);
-    }, 4500);
   });
 
   // ── Celebration effects ──
