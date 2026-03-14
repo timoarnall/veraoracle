@@ -1005,7 +1005,7 @@ if (!gl) {
       let prevPointerX = 0.5, prevPointerY = 0.5;
 
       var isTouch = 'ontouchstart' in window;
-      var energyMult = isTouch ? 25.0 : 14.0;
+      var energyMult = isTouch ? 8.0 : 4.0;
 
       function updatePointerPos(x, y) {
         targetTouchX = x / window.innerWidth;
@@ -1013,8 +1013,8 @@ if (!gl) {
         var dx = targetTouchX - prevPointerX;
         var dy = targetTouchY - prevPointerY;
         var speed = Math.sqrt(dx * dx + dy * dy);
-        energyLevel = Math.min(energyLevel + speed * energyMult, 4.0);
-        movePhase += speed * 150.0;
+        energyLevel = Math.min(energyLevel + speed * energyMult, 1.5);
+        movePhase += speed * 200.0;
         prevPointerX = targetTouchX;
         prevPointerY = targetTouchY;
         pointerMoving = true;
