@@ -1,0 +1,973 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Vera Oracle</title>
+<meta name="description" content="Tarot readings by Vera Oracle. Book your session.">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html {
+    height: 100%;
+  }
+
+  body {
+    background: #000;
+    width: 100%;
+    min-height: 300vh;
+    font-family: -apple-system, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    color: #fff;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  canvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  .content {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    pointer-events: none;
+  }
+
+  .name {
+    font-size: clamp(3.5rem, 14vw, 9rem);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    text-shadow:
+      0 0 60px rgba(255,255,255,0.25),
+      0 0 120px rgba(200,160,255,0.1);
+    opacity: 0;
+    animation: fadeIn 3s ease-out 0.5s forwards;
+  }
+
+  .booking {
+    margin-top: 2.5rem;
+    opacity: 0;
+    animation: fadeIn 3s ease-out 2s forwards;
+    pointer-events: auto;
+  }
+
+  .booking a {
+    font-family: inherit;
+    font-size: clamp(0.85rem, 2.5vw, 1rem);
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    color: rgba(255, 255, 255, 0.5);
+    text-decoration: none;
+    padding: 0.9em 2.2em;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 980px;
+    transition: all 0.5s ease;
+    display: inline-block;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    background: rgba(255,255,255,0.04);
+  }
+
+  .booking a:hover {
+    color: rgba(255, 255, 255, 0.9);
+    border-color: rgba(255, 255, 255, 0.25);
+    background: rgba(255,255,255,0.08);
+  }
+
+  .scroll-hint {
+    position: fixed;
+    bottom: 2.5rem;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10;
+    opacity: 0;
+    animation: fadeIn 3s ease-out 3.5s forwards;
+    pointer-events: none;
+    transition: opacity 0.5s ease;
+  }
+
+  .scroll-hint span {
+    display: block;
+    width: 1px;
+    height: 28px;
+    background: linear-gradient(to bottom, rgba(255,255,255,0.3), rgba(255,255,255,0));
+    margin: 0 auto;
+    animation: scrollPulse 2s ease-in-out infinite;
+  }
+
+  @keyframes scrollPulse {
+    0%, 100% { transform: translateY(0); opacity: 0.4; }
+    50% { transform: translateY(8px); opacity: 0.15; }
+  }
+
+  .reveal {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 33vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    pointer-events: none;
+    opacity: 0;
+  }
+
+  .reveal p {
+    font-size: clamp(1.2rem, 5vw, 2.5rem);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    color: rgba(255, 255, 255, 0.5);
+    text-align: center;
+    line-height: 1.4;
+    text-shadow:
+      0 0 40px rgba(255,255,255,0.15),
+      0 0 80px rgba(200,160,255,0.08);
+  }
+
+  .booking {
+    position: relative;
+  }
+
+  .sparkles {
+    position: absolute;
+    top: -15px; left: -15px;
+    right: -15px; bottom: -15px;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.8s ease;
+  }
+
+  .sparkle {
+    position: absolute;
+    width: 3px;
+    height: 3px;
+    border-radius: 50%;
+    background: #fff;
+    opacity: 0;
+    animation: sparkleAnim var(--dur) var(--delay) ease-in-out infinite;
+  }
+
+  @keyframes sparkleAnim {
+    0%, 100% { opacity: 0; transform: scale(0); }
+    50% { opacity: var(--peak); transform: scale(1); }
+  }
+
+  .sparkles-page {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+    z-index: 9;
+    opacity: 0;
+    transition: opacity 0.8s ease;
+  }
+
+  @keyframes fadeIn {
+    to { opacity: 1; }
+  }
+
+  /* ── Booking modal ── */
+  .booking-overlay {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: 100;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    background: rgba(0,0,0,0.5);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.4s ease;
+  }
+  .booking-overlay.active {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .booking-modal {
+    width: 100%;
+    max-width: 440px;
+    max-height: 90vh;
+    overflow-y: auto;
+    background: rgba(20,16,28,0.92);
+    backdrop-filter: blur(40px);
+    -webkit-backdrop-filter: blur(40px);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-bottom: none;
+    border-radius: 20px 20px 0 0;
+    padding: 32px 28px 40px;
+    transform: translateY(100%);
+    transition: transform 0.45s cubic-bezier(0.16,1,0.3,1);
+  }
+  .booking-overlay.active .booking-modal {
+    transform: translateY(0);
+  }
+  .booking-modal h2 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    margin: 0 0 4px;
+  }
+  .booking-modal .subtitle {
+    color: rgba(255,255,255,0.35);
+    font-size: 0.85rem;
+    margin-bottom: 24px;
+  }
+  .booking-modal label {
+    display: block;
+    color: rgba(255,255,255,0.4);
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
+    margin-bottom: 6px;
+    margin-top: 16px;
+  }
+  .booking-modal label:first-of-type {
+    margin-top: 0;
+  }
+  .booking-modal input,
+  .booking-modal select,
+  .booking-modal textarea {
+    width: 100%;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 10px;
+    color: #fff;
+    font-family: inherit;
+    font-size: 0.95rem;
+    padding: 10px 14px;
+    outline: none;
+    transition: border-color 0.3s ease;
+    -webkit-appearance: none;
+  }
+  .booking-modal input:focus,
+  .booking-modal select:focus,
+  .booking-modal textarea:focus {
+    border-color: rgba(255,255,255,0.2);
+  }
+  .booking-modal input::placeholder,
+  .booking-modal textarea::placeholder {
+    color: rgba(255,255,255,0.2);
+  }
+  .booking-modal select option {
+    background: #1a1424;
+    color: #fff;
+  }
+  .booking-modal textarea {
+    resize: vertical;
+    min-height: 70px;
+  }
+  .booking-modal .row {
+    display: flex;
+    gap: 12px;
+  }
+  .booking-modal .row > div {
+    flex: 1;
+  }
+  .booking-modal .submit-btn {
+    width: 100%;
+    margin-top: 24px;
+    padding: 12px;
+    border: none;
+    border-radius: 980px;
+    background: rgba(255,255,255,0.1);
+    color: rgba(255,255,255,0.7);
+    font-family: inherit;
+    font-size: 0.95rem;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+  .booking-modal .submit-btn:hover {
+    background: rgba(255,255,255,0.15);
+    color: rgba(255,255,255,0.95);
+  }
+  .booking-modal .submit-btn:disabled {
+    opacity: 0.4;
+    cursor: default;
+  }
+  .booking-modal .close-btn {
+    position: absolute;
+    top: 16px; right: 16px;
+    background: none; border: none;
+    color: rgba(255,255,255,0.3);
+    font-size: 1.3rem;
+    cursor: pointer;
+    padding: 4px 8px;
+    line-height: 1;
+    transition: color 0.2s ease;
+  }
+  .booking-modal .close-btn:hover {
+    color: rgba(255,255,255,0.7);
+  }
+  .booking-modal .thank-you {
+    text-align: center;
+    padding: 40px 0;
+  }
+  .booking-modal .thank-you h3 {
+    font-size: 1.3rem;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+  .booking-modal .thank-you p {
+    color: rgba(255,255,255,0.4);
+    font-size: 0.9rem;
+    line-height: 1.5;
+  }
+
+  .fallback-bg {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: radial-gradient(ellipse at 30% 50%, rgba(90,40,120,0.4), transparent 60%),
+                radial-gradient(ellipse at 70% 60%, rgba(40,80,120,0.3), transparent 50%),
+                radial-gradient(ellipse at 50% 40%, rgba(120,60,90,0.2), transparent 55%),
+                #050208;
+    animation: fallbackPulse 8s ease-in-out infinite alternate;
+    display: none;
+  }
+
+  @keyframes fallbackPulse {
+    0% { filter: brightness(0.8) hue-rotate(0deg); }
+    100% { filter: brightness(1.2) hue-rotate(20deg); }
+  }
+</style>
+</head>
+<body>
+
+<div class="fallback-bg" id="fallback"></div>
+<canvas id="aura"></canvas>
+
+<div class="content" id="content">
+  <h1 class="name">Vera Oracle</h1>
+  <div class="booking">
+    <div class="sparkles" id="sparkles"></div>
+    <a href="#book" id="bookBtn">Book a Reading</a>
+  </div>
+</div>
+<div class="scroll-hint" id="scrollHint"><span></span></div>
+<div class="sparkles-page" id="sparklesPage"></div>
+<div class="reveal" id="reveal">
+  <p>You were meant<br>to find this</p>
+</div>
+
+<script>
+(function() {
+  function makeSparkles(container, count, sizeMin, sizeMax) {
+    for (let i = 0; i < count; i++) {
+      const s = document.createElement('div');
+      s.className = 'sparkle';
+      s.style.left = (Math.random() * 100) + '%';
+      s.style.top = (Math.random() * 100) + '%';
+      s.style.setProperty('--dur', (1.5 + Math.random() * 2.5) + 's');
+      s.style.setProperty('--delay', (Math.random() * 3) + 's');
+      s.style.setProperty('--peak', (0.4 + Math.random() * 0.6).toString());
+      const size = sizeMin + Math.random() * (sizeMax - sizeMin);
+      s.style.width = s.style.height = size + 'px';
+      s.style.boxShadow = '0 0 ' + (3 + Math.random() * 6) + 'px rgba(200,160,255,' + (0.3 + Math.random() * 0.5) + ')';
+      container.appendChild(s);
+    }
+  }
+  makeSparkles(document.getElementById('sparkles'), 20, 1.5, 2.5);
+  makeSparkles(document.getElementById('sparklesPage'), 15, 1, 2);
+})();
+</script>
+
+<script>
+const canvas = document.getElementById('aura');
+const gl = canvas.getContext('webgl', {
+  alpha: false,
+  antialias: false,
+  premultipliedAlpha: false,
+  preserveDrawingBuffer: false,
+}) || canvas.getContext('experimental-webgl');
+
+if (!gl) {
+  document.getElementById('fallback').style.display = 'block';
+  canvas.style.display = 'none';
+} else {
+  const vsSource = `
+    attribute vec2 a_pos;
+    void main() {
+      gl_Position = vec4(a_pos, 0.0, 1.0);
+    }
+  `;
+
+  const fsSource = `
+    precision highp float;
+
+    uniform vec2 u_resolution;
+    uniform float u_time;
+    uniform vec2 u_touch;
+    uniform float u_touch_active;
+    uniform float u_scroll;
+    uniform float u_energy;
+    uniform vec3 u_trail[16];
+
+    vec3 mod289(vec3 x) { return x - floor(x * (1.0/289.0)) * 289.0; }
+    vec4 mod289(vec4 x) { return x - floor(x * (1.0/289.0)) * 289.0; }
+    vec4 permute(vec4 x) { return mod289(((x*34.0)+1.0)*x); }
+    vec4 taylorInvSqrt(vec4 r) { return 1.79284291400159 - 0.85373472095314 * r; }
+
+    float snoise(vec3 v) {
+      const vec2 C = vec2(1.0/6.0, 1.0/3.0);
+      const vec4 D = vec4(0.0, 0.5, 1.0, 2.0);
+      vec3 i = floor(v + dot(v, C.yyy));
+      vec3 x0 = v - i + dot(i, C.xxx);
+      vec3 g = step(x0.yzx, x0.xyz);
+      vec3 l = 1.0 - g;
+      vec3 i1 = min(g.xyz, l.zxy);
+      vec3 i2 = max(g.xyz, l.zxy);
+      vec3 x1 = x0 - i1 + C.xxx;
+      vec3 x2 = x0 - i2 + C.yyy;
+      vec3 x3 = x0 - D.yyy;
+      i = mod289(i);
+      vec4 p = permute(permute(permute(
+                i.z + vec4(0.0, i1.z, i2.z, 1.0))
+              + i.y + vec4(0.0, i1.y, i2.y, 1.0))
+              + i.x + vec4(0.0, i1.x, i2.x, 1.0));
+      float n_ = 0.142857142857;
+      vec3 ns = n_ * D.wyz - D.xzx;
+      vec4 j = p - 49.0 * floor(p * ns.z * ns.z);
+      vec4 x_ = floor(j * ns.z);
+      vec4 y_ = floor(j - 7.0 * x_);
+      vec4 x = x_ * ns.x + ns.yyyy;
+      vec4 y = y_ * ns.x + ns.yyyy;
+      vec4 h = 1.0 - abs(x) - abs(y);
+      vec4 b0 = vec4(x.xy, y.xy);
+      vec4 b1 = vec4(x.zw, y.zw);
+      vec4 s0 = floor(b0)*2.0 + 1.0;
+      vec4 s1 = floor(b1)*2.0 + 1.0;
+      vec4 sh = -step(h, vec4(0.0));
+      vec4 a0 = b0.xzyw + s0.xzyw*sh.xxyy;
+      vec4 a1 = b1.xzyw + s1.xzyw*sh.zzww;
+      vec3 p0 = vec3(a0.xy, h.x);
+      vec3 p1 = vec3(a0.zw, h.y);
+      vec3 p2 = vec3(a1.xy, h.z);
+      vec3 p3 = vec3(a1.zw, h.w);
+      vec4 norm = taylorInvSqrt(vec4(dot(p0,p0), dot(p1,p1), dot(p2,p2), dot(p3,p3)));
+      p0 *= norm.x; p1 *= norm.y; p2 *= norm.z; p3 *= norm.w;
+      vec4 m = max(0.6 - vec4(dot(x0,x0), dot(x1,x1), dot(x2,x2), dot(x3,x3)), 0.0);
+      m = m * m;
+      return 42.0 * dot(m*m, vec4(dot(p0,x0), dot(p1,x1), dot(p2,x2), dot(p3,x3)));
+    }
+
+    float fbm(vec3 p) {
+      float f = 0.0;
+      float amp = 0.5;
+      for (int i = 0; i < 5; i++) {
+        f += amp * snoise(p);
+        p *= 2.1;
+        amp *= 0.5;
+      }
+      return f;
+    }
+
+    vec3 auraColor(float t, float energy) {
+      vec3 c1 = vec3(0.25, 0.05, 0.45);
+      vec3 c2 = vec3(0.55, 0.08, 0.40);
+      vec3 c3 = vec3(0.15, 0.25, 0.50);
+      float phase = t * 3.0;
+      vec3 col;
+      if (phase < 1.0) col = mix(c1, c2, phase);
+      else if (phase < 2.0) col = mix(c2, c3, phase - 1.0);
+      else col = mix(c3, c1, phase - 2.0);
+      col += vec3(0.15, 0.08, 0.02) * energy * energy;
+      return col;
+    }
+
+    // Cheap hash for grain
+    float hash(vec2 p) {
+      vec3 p3 = fract(vec3(p.xyx) * 0.1031);
+      p3 += dot(p3, p3.yzx + 33.33);
+      return fract((p3.x + p3.y) * p3.z);
+    }
+
+    void main() {
+      vec2 p = (gl_FragCoord.xy - 0.5 * u_resolution) / min(u_resolution.x, u_resolution.y);
+      float t = u_time * 0.08;
+      float scrollPhase = u_scroll * 0.002;
+      float energy = u_energy;
+      float aspect = u_resolution.x / u_resolution.y;
+
+      vec2 touchP = vec2(
+        (u_touch.x - 0.5) * aspect,
+        (u_touch.y - 0.5)
+      );
+      float touchDist = length(p - touchP);
+      float touchInfluence = u_touch_active / (1.0 + 2.0 * touchDist);
+
+      vec3 color = vec3(0.0);
+
+      // Layer 1 — deep background nebula
+      {
+        vec3 pos = vec3(p * 1.2, t * 0.5 + scrollPhase * 0.5);
+        float n = fbm(pos + vec3(0.0, 0.0, t * 0.3));
+        float n2 = fbm(pos * 1.5 + vec3(t * 0.2, scrollPhase * 0.3, n));
+        float aura = smoothstep(-0.1, 0.8, n * n2 + 0.3);
+        aura *= 0.4;
+        vec3 col = auraColor(fract(n * 0.5 + t * 0.1 + scrollPhase * 0.15), aura);
+        color += col * aura;
+      }
+
+      // Layer 2 — mid volumetric light
+      {
+        vec2 center = mix(
+          vec2(sin(t * 0.3) * 0.15, cos(t * 0.25) * 0.1),
+          touchP * 0.6,
+          u_touch_active * 0.7
+        );
+        vec3 pos = vec3((p - center * 0.3) * 1.8, t * 0.7 + 10.0 + scrollPhase);
+        float n = fbm(pos + vec3(sin(t * 0.4) * 0.5, cos(t * 0.3) * 0.5, 0.0));
+        vec3 pos2 = pos + vec3(n * 0.6);
+        float n2 = fbm(pos2 * 0.8 + vec3(0.0, t * 0.2, 0.0));
+        float dist = length(p - center);
+        float aura = exp(-dist * 1.5) * smoothstep(-0.2, 0.6, n2) * 0.7;
+        aura *= 1.0 + touchInfluence * 0.8 + energy * 0.5;
+        float phase = fract(n2 * 0.3 + t * 0.05 + 0.33 + scrollPhase * 0.1);
+        vec3 col = auraColor(phase, aura);
+        color += col * aura * 1.5;
+      }
+
+      // Layer 3 — tendrils
+      {
+        vec3 pos = vec3(p * 2.5, t + 20.0);
+        float angle = atan(p.y, p.x);
+        float radius = length(p);
+        float tendrilCount = 3.0 + sin(scrollPhase * 0.5) * 1.5;
+        float spiral = sin(angle * tendrilCount - t * 1.5 + fbm(vec3(angle, radius * 2.0, t * 0.5)) * 4.0);
+        float n = fbm(pos + vec3(spiral * 0.3));
+        float aura = exp(-radius * 2.5) * smoothstep(0.0, 0.5, spiral * 0.5 + 0.5) * n;
+        aura = max(aura, 0.0) * 0.6;
+        vec3 col = auraColor(fract(angle / 6.283 + t * 0.03 + 0.66 + scrollPhase * 0.08), aura * 1.5);
+        color += col * aura * 1.8;
+      }
+
+      // Layer 4 — sparkles
+      {
+        vec3 pos = vec3(p * 4.0, t * 1.2 + 40.0);
+        float n = snoise(pos);
+        float n2 = snoise(pos * 3.0 + 100.0);
+        float sparkle = pow(max(n * n2, 0.0), 3.0) * 2.0;
+        sparkle *= exp(-length(p) * 1.0);
+        sparkle *= 1.0 + energy * 2.0;
+        color += vec3(0.7, 0.5, 0.9) * sparkle;
+      }
+
+      // Layer 5 — halo
+      {
+        float radius = length(p);
+        float haloSize = 0.8 + sin(scrollPhase * 0.3) * 0.3;
+        float halo = exp(-radius * haloSize) * 0.15;
+        float n = fbm(vec3(p * 0.7, t * 0.3 + 30.0));
+        halo *= (0.7 + 0.3 * n);
+        vec3 haloCol = mix(
+          vec3(0.15, 0.08, 0.35),
+          vec3(0.08, 0.20, 0.30),
+          0.5 + 0.5 * sin(t * 0.5 + scrollPhase * 0.2)
+        );
+        color += haloCol * halo;
+      }
+
+      // ── Trail: volumetric light deposits ──
+      // Uses single snoise per point (not fbm) + early distance cull
+      {
+        for (int i = 0; i < 16; i++) {
+          float intensity = u_trail[i].z;
+          if (intensity < 0.005) continue;
+
+          vec2 trailP = vec2(
+            (u_trail[i].x - 0.5) * aspect,
+            (u_trail[i].y - 0.5)
+          );
+
+          float d = length(p - trailP);
+          if (d > 0.7) continue;
+
+          float vol = snoise(vec3(p * 3.0, u_time * 0.3 + float(i) * 0.7)) * 0.5 + 0.5;
+
+          float glow = exp(-d * 8.0) * vol;
+          float scatter = exp(-d * 3.0) * 0.25;
+          float ambient = exp(-d * 1.5) * 0.08;
+          float total = (glow + scatter + ambient) * intensity;
+
+          vec3 trailCol = auraColor(
+            fract(float(i) * 0.15 + u_time * 0.02 + scrollPhase * 0.05),
+            total
+          );
+          vec3 warmCore = vec3(0.9, 0.8, 1.0) * exp(-d * 12.0) * intensity * vol * 0.6;
+          color += trailCol * total * 1.2 + warmCore;
+        }
+      }
+
+      // ── Scroll energy burst ──
+      {
+        float burstRadius = length(p);
+        float burst = energy * exp(-burstRadius * 1.5) * 0.4;
+        float n = snoise(vec3(p * 2.0, u_time * 0.8 + scrollPhase));
+        burst *= (0.7 + 0.5 * n);
+        vec3 burstCol = auraColor(fract(scrollPhase * 0.1), energy);
+        color += burstCol * burst;
+      }
+
+      // Vignette + tonemap
+      float vignette = 1.0 - smoothstep(0.4, 1.4, length(p));
+      color *= 0.5 + 0.5 * vignette;
+      color = color / (color + 0.5);
+      color.r *= 1.05;
+      color.b *= 1.02;
+      color = pow(color, vec3(0.9));
+
+      // Grain (cheap hash, visually identical to snoise grain)
+      float grain = (hash(gl_FragCoord.xy + fract(u_time * 100.0)) - 0.5) * 0.03;
+      color += grain;
+
+      gl_FragColor = vec4(max(color, 0.0), 1.0);
+    }
+  `;
+
+  function createShader(type, source) {
+    const shader = gl.createShader(type);
+    gl.shaderSource(shader, source);
+    gl.compileShader(shader);
+    if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+      console.error('Shader error:', gl.getShaderInfoLog(shader));
+      gl.deleteShader(shader);
+      return null;
+    }
+    return shader;
+  }
+
+  const vs = createShader(gl.VERTEX_SHADER, vsSource);
+  const fs = createShader(gl.FRAGMENT_SHADER, fsSource);
+
+  if (!vs || !fs) {
+    document.getElementById('fallback').style.display = 'block';
+    canvas.style.display = 'none';
+  } else {
+    const program = gl.createProgram();
+    gl.attachShader(program, vs);
+    gl.attachShader(program, fs);
+    gl.linkProgram(program);
+
+    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+      console.error('Program error:', gl.getProgramInfoLog(program));
+      document.getElementById('fallback').style.display = 'block';
+      canvas.style.display = 'none';
+    } else {
+      gl.useProgram(program);
+
+      const verts = new Float32Array([-1,-1, 1,-1, -1,1, 1,1]);
+      const buf = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+      gl.bufferData(gl.ARRAY_BUFFER, verts, gl.STATIC_DRAW);
+
+      const aPos = gl.getAttribLocation(program, 'a_pos');
+      gl.enableVertexAttribArray(aPos);
+      gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
+
+      const uRes = gl.getUniformLocation(program, 'u_resolution');
+      const uTime = gl.getUniformLocation(program, 'u_time');
+      const uTouch = gl.getUniformLocation(program, 'u_touch');
+      const uTouchActive = gl.getUniformLocation(program, 'u_touch_active');
+      const uScroll = gl.getUniformLocation(program, 'u_scroll');
+      const uEnergy = gl.getUniformLocation(program, 'u_energy');
+
+      const TRAIL_COUNT = 16;
+      const uTrail = [];
+      for (let i = 0; i < TRAIL_COUNT; i++) {
+        uTrail.push(gl.getUniformLocation(program, 'u_trail[' + i + ']'));
+      }
+
+      const trail = [];
+      for (let i = 0; i < TRAIL_COUNT; i++) {
+        trail.push({ x: 0.5, y: 0.5, intensity: 0.0 });
+      }
+      let trailHead = 0;
+      let trailTimer = 0;
+
+      let touchX = 0.5, touchY = 0.5;
+      let targetTouchX = 0.5, targetTouchY = 0.5;
+      let touchActive = 0.0, targetTouchActive = 0.0;
+      let pointerDown = false;
+      let scrollPos = 0.0;
+      let prevScrollPos = 0.0;
+      let energyLevel = 0.0;
+
+      function updatePointerPos(x, y) {
+        targetTouchX = x / window.innerWidth;
+        targetTouchY = 1.0 - y / window.innerHeight;
+      }
+
+      window.addEventListener('mousemove', (e) => { updatePointerPos(e.clientX, e.clientY); });
+      window.addEventListener('mousedown', (e) => {
+        pointerDown = true; targetTouchActive = 1.0;
+        updatePointerPos(e.clientX, e.clientY);
+      });
+      window.addEventListener('mouseup', () => { pointerDown = false; targetTouchActive = 0.0; });
+
+      window.addEventListener('touchstart', (e) => {
+        pointerDown = true; targetTouchActive = 1.0;
+        updatePointerPos(e.touches[0].clientX, e.touches[0].clientY);
+      }, { passive: true });
+      window.addEventListener('touchmove', (e) => {
+        updatePointerPos(e.touches[0].clientX, e.touches[0].clientY);
+      }, { passive: true });
+      window.addEventListener('touchend', () => { pointerDown = false; targetTouchActive = 0.0; }, { passive: true });
+      window.addEventListener('touchcancel', () => { pointerDown = false; targetTouchActive = 0.0; }, { passive: true });
+
+      const contentEl = document.getElementById('content');
+      const scrollHintEl = document.getElementById('scrollHint');
+      const revealEl = document.getElementById('reveal');
+      const sparklesEl = document.getElementById('sparkles');
+      const sparklesPageEl = document.getElementById('sparklesPage');
+      const maxScroll = () => document.body.scrollHeight - window.innerHeight;
+
+      window.addEventListener('scroll', () => {
+        const s = window.scrollY;
+        const delta = Math.abs(s - prevScrollPos);
+        energyLevel = Math.min(energyLevel + delta * 0.008, 1.5);
+        prevScrollPos = s;
+
+        // Fade title down to 0.15; button gets more prominent
+        const fade = 0.15 + 0.85 * Math.max(0, 1.0 - s / (window.innerHeight * 0.5));
+        const scrollRatio = Math.min(s / (window.innerHeight * 0.5), 1.0);
+        contentEl.querySelector('.name').style.opacity = fade;
+        const btn = contentEl.querySelector('.booking a');
+        btn.style.color = 'rgba(255,255,255,' + (0.5 + scrollRatio * 0.4) + ')';
+        btn.style.borderColor = 'rgba(255,255,255,' + (0.12 + scrollRatio * 0.2) + ')';
+        btn.style.background = 'rgba(255,255,255,' + (0.04 + scrollRatio * 0.06) + ')';
+
+        if (s > 20) scrollHintEl.style.opacity = '0';
+
+        // Reveal surprise + sparkles in the last 30% of scroll
+        const progress = s / maxScroll();
+        const revealAmount = Math.max(0, (progress - 0.7) / 0.3);
+        revealEl.style.opacity = revealAmount;
+        sparklesEl.style.opacity = revealAmount;
+        sparklesPageEl.style.opacity = revealAmount * 0.6;
+      }, { passive: true });
+
+      // ── Adaptive resolution: renders fewer pixels, CSS scales up ──
+      // This is the single biggest perf win — dark/glowy scenes hide it perfectly
+      function resize() {
+        const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+        const w = window.innerWidth;
+        const scale = w < 480 ? 0.35 : w < 768 ? 0.45 : 0.55;
+        canvas.width = Math.round(w * dpr * scale);
+        canvas.height = Math.round(window.innerHeight * dpr * scale);
+        gl.viewport(0, 0, canvas.width, canvas.height);
+      }
+
+      window.addEventListener('resize', resize);
+      resize();
+
+      const startTime = performance.now();
+
+      function render() {
+        const elapsed = (performance.now() - startTime) / 1000.0;
+
+        touchX += (targetTouchX - touchX) * 0.08;
+        touchY += (targetTouchY - touchY) * 0.08;
+        touchActive += (targetTouchActive - touchActive) * 0.012;
+        if (touchActive < 0.003) touchActive = 0.0;
+
+        trailTimer++;
+        if (pointerDown && trailTimer % 3 === 0) {
+          trail[trailHead].x = touchX;
+          trail[trailHead].y = touchY;
+          trail[trailHead].intensity = 1.0;
+          trailHead = (trailHead + 1) % TRAIL_COUNT;
+        }
+
+        for (let i = 0; i < TRAIL_COUNT; i++) {
+          trail[i].intensity *= 0.985;
+          if (trail[i].intensity < 0.003) trail[i].intensity = 0.0;
+        }
+
+        scrollPos = window.scrollY;
+        energyLevel *= 0.96;
+        if (energyLevel < 0.001) energyLevel = 0.0;
+
+        gl.uniform2f(uRes, canvas.width, canvas.height);
+        gl.uniform1f(uTime, elapsed);
+        gl.uniform2f(uTouch, touchX, touchY);
+        gl.uniform1f(uTouchActive, touchActive);
+        gl.uniform1f(uScroll, scrollPos);
+        gl.uniform1f(uEnergy, energyLevel);
+        for (let i = 0; i < TRAIL_COUNT; i++) {
+          gl.uniform3f(uTrail[i], trail[i].x, trail[i].y, trail[i].intensity);
+        }
+
+        gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+        requestAnimationFrame(render);
+      }
+
+      render();
+    }
+  }
+}
+</script>
+
+<!-- Booking modal -->
+<div class="booking-overlay" id="bookingOverlay">
+  <div class="booking-modal" id="bookingModal">
+    <button class="close-btn" id="bookingClose">&times;</button>
+    <div id="bookingForm">
+      <h2>Book a Reading</h2>
+      <p class="subtitle">Choose your session and we'll be in touch</p>
+      <label>Name</label>
+      <input type="text" id="bk-name" placeholder="Your name" autocomplete="name">
+      <label>Email</label>
+      <input type="email" id="bk-email" placeholder="your@email.com" autocomplete="email">
+      <div class="row">
+        <div>
+          <label>Preferred date</label>
+          <input type="date" id="bk-date">
+        </div>
+        <div>
+          <label>Preferred time</label>
+          <select id="bk-time">
+            <option value="">Any time</option>
+            <option value="morning">Morning</option>
+            <option value="afternoon">Afternoon</option>
+            <option value="evening">Evening</option>
+          </select>
+        </div>
+      </div>
+      <label>Type of reading</label>
+      <select id="bk-type">
+        <option value="">Choose a reading...</option>
+        <option>Career & purpose</option>
+        <option>Love & relationships</option>
+        <option>Family & home</option>
+        <option>Money & abundance</option>
+        <option>Health & wellbeing</option>
+        <option>Grief & loss</option>
+        <option>Spiritual growth</option>
+        <option>Shadow work</option>
+        <option>Year ahead</option>
+        <option>Past life</option>
+        <option>Decision & crossroads</option>
+        <option>Creativity & self-expression</option>
+        <option>Travel & new beginnings</option>
+      </select>
+      <label>Message <span style="color:rgba(255,255,255,0.2)">(optional)</span></label>
+      <textarea id="bk-message" placeholder="Anything you'd like me to know..."></textarea>
+      <button class="submit-btn" id="bk-submit">Request Booking</button>
+    </div>
+    <div id="bookingThankYou" class="thank-you" style="display:none">
+      <h3>Thank you</h3>
+      <p>Your request has been sent.<br>I'll get back to you soon.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Supabase CDN -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+
+<script>
+(function() {
+  const SUPABASE_URL = 'https://odqnbtnbbvqktaqejuxh.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9kcW5idG5iYnZxa3RhcWVqdXhoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM0MjI3NDIsImV4cCI6MjA4ODk5ODc0Mn0.1D-imafIpPFdcBRO2BZAry2h3cQs60dfvOcRJyVYxqA';
+  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  const overlay  = document.getElementById('bookingOverlay');
+  const formDiv  = document.getElementById('bookingForm');
+  const thankDiv = document.getElementById('bookingThankYou');
+  const submitBtn = document.getElementById('bk-submit');
+
+  // Open
+  document.getElementById('bookBtn').addEventListener('click', function(e) {
+    e.preventDefault();
+    overlay.classList.add('active');
+  });
+
+  // Close
+  document.getElementById('bookingClose').addEventListener('click', function() {
+    overlay.classList.remove('active');
+  });
+  overlay.addEventListener('click', function(e) {
+    if (e.target === overlay) overlay.classList.remove('active');
+  });
+
+  // Submit
+  submitBtn.addEventListener('click', async function() {
+    const name  = document.getElementById('bk-name').value.trim();
+    const email = document.getElementById('bk-email').value.trim();
+    const date  = document.getElementById('bk-date').value;
+    const time  = document.getElementById('bk-time').value;
+    const type  = document.getElementById('bk-type').value;
+    const msg   = document.getElementById('bk-message').value.trim();
+
+    if (!name || !email) {
+      submitBtn.textContent = 'Please enter name and email';
+      setTimeout(() => { submitBtn.textContent = 'Request Booking'; }, 2000);
+      return;
+    }
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Sending...';
+
+    const { error } = await sb
+      .from('booking_requests')
+      .insert({
+        name: name,
+        email: email,
+        preferred_date: date || null,
+        preferred_time: time || null,
+        reading_type: type || null,
+        message: msg || null,
+        status: 'pending'
+      });
+
+    if (error) {
+      submitBtn.disabled = false;
+      if (error.message && error.message.includes('rate')) {
+        submitBtn.textContent = 'Too many requests — try again later';
+      } else {
+        submitBtn.textContent = 'Something went wrong — try again';
+      }
+      setTimeout(() => { submitBtn.textContent = 'Request Booking'; }, 3000);
+      return;
+    }
+
+    formDiv.style.display = 'none';
+    thankDiv.style.display = 'block';
+
+    // Reset after closing
+    setTimeout(() => {
+      overlay.classList.remove('active');
+      setTimeout(() => {
+        formDiv.style.display = 'block';
+        thankDiv.style.display = 'none';
+        document.getElementById('bk-name').value = '';
+        document.getElementById('bk-email').value = '';
+        document.getElementById('bk-date').value = '';
+        document.getElementById('bk-time').value = '';
+        document.getElementById('bk-type').value = '';
+        document.getElementById('bk-message').value = '';
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Request Booking';
+      }, 500);
+    }, 2500);
+  });
+})();
+</script>
+
+</body>
+</html>
