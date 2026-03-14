@@ -432,33 +432,145 @@
   }
 
   .booking-modal .thank-you {
+    position: relative;
     text-align: center;
-    padding: 48px 0 24px;
-    animation: thankYouIn 0.6s ease-out;
+    padding: 40px 0 20px;
+    min-height: 280px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
   }
-  .booking-modal .thank-you .ty-symbol {
-    font-size: 2rem;
-    margin-bottom: 16px;
-    opacity: 0.5;
-    animation: tyPulse 2s ease-in-out infinite;
+
+  /* Central glow orb */
+  .thank-you .ty-orb {
+    position: relative;
+    width: 80px; height: 80px;
+    margin: 0 auto 28px;
+    opacity: 0;
+    animation: orbAppear 1s 0.2s cubic-bezier(0.16,1,0.3,1) forwards;
   }
-  @keyframes tyPulse {
-    0%, 100% { opacity: 0.4; transform: scale(1); }
-    50% { opacity: 0.7; transform: scale(1.05); }
+  .ty-orb::before {
+    content: '';
+    position: absolute;
+    inset: -20px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(180,140,255,0.25), transparent 70%);
+    animation: orbBreath 3s ease-in-out infinite;
   }
-  .booking-modal .thank-you h3 {
-    font-size: 1.3rem;
+  .ty-orb::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: radial-gradient(circle at 40% 35%, rgba(220,200,255,0.3), rgba(140,100,220,0.15) 50%, transparent 70%);
+    box-shadow:
+      0 0 40px rgba(160,120,255,0.3),
+      0 0 80px rgba(140,100,220,0.15),
+      inset 0 0 30px rgba(200,170,255,0.1);
+    animation: orbPulse 2s ease-in-out infinite;
+  }
+  @keyframes orbAppear {
+    from { opacity: 0; transform: scale(0.3); }
+    to { opacity: 1; transform: scale(1); }
+  }
+  @keyframes orbBreath {
+    0%, 100% { transform: scale(1); opacity: 0.6; }
+    50% { transform: scale(1.15); opacity: 1; }
+  }
+  @keyframes orbPulse {
+    0%, 100% { box-shadow: 0 0 40px rgba(160,120,255,0.3), 0 0 80px rgba(140,100,220,0.15), inset 0 0 30px rgba(200,170,255,0.1); }
+    50% { box-shadow: 0 0 60px rgba(160,120,255,0.4), 0 0 100px rgba(140,100,220,0.2), inset 0 0 40px rgba(200,170,255,0.15); }
+  }
+
+  /* Ring of tiny orbiting dots around the orb */
+  .ty-orb .orbit-ring {
+    position: absolute;
+    inset: -25px;
+    animation: orbitSpin 8s linear infinite;
+  }
+  @keyframes orbitSpin { to { transform: rotate(360deg); } }
+  .ty-orb .orbit-dot {
+    position: absolute;
+    width: 3px; height: 3px;
+    border-radius: 50%;
+    background: rgba(200,170,255,0.7);
+    box-shadow: 0 0 6px rgba(180,140,255,0.5);
+  }
+
+  /* Text entrance */
+  .thank-you .ty-text {
+    opacity: 0;
+    transform: translateY(15px);
+    animation: tyTextIn 0.7s 0.6s ease-out forwards;
+  }
+  .thank-you .ty-text-delay {
+    animation-delay: 0.9s;
+  }
+  @keyframes tyTextIn {
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .thank-you h3 {
+    font-size: 1.4rem;
     font-weight: 600;
-    margin: 0 0 8px;
+    margin: 0 0 10px;
+    letter-spacing: -0.01em;
   }
-  .booking-modal .thank-you p {
-    color: rgba(255,255,255,0.35);
+  .thank-you .ty-msg {
+    color: rgba(255,255,255,0.4);
     font-size: 0.85rem;
-    line-height: 1.6;
+    line-height: 1.7;
+    max-width: 260px;
   }
-  @keyframes thankYouIn {
-    from { opacity: 0; transform: scale(0.95) translateY(10px); }
-    to { opacity: 1; transform: scale(1) translateY(0); }
+  .thank-you .ty-note {
+    color: rgba(255,255,255,0.2);
+    font-size: 0.72rem;
+    letter-spacing: 0.04em;
+    margin-top: 16px;
+  }
+
+  /* Celebration burst particles */
+  .ty-burst {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+    overflow: hidden;
+  }
+  .ty-spark {
+    position: absolute;
+    border-radius: 50%;
+    opacity: 0;
+    animation: sparkBurst var(--s-dur) var(--s-delay) ease-out forwards;
+  }
+  @keyframes sparkBurst {
+    0% {
+      opacity: 0;
+      transform: translate(0, 0) scale(0);
+    }
+    15% {
+      opacity: var(--s-peak);
+      transform: translate(calc(var(--s-dx) * 0.3), calc(var(--s-dy) * 0.3)) scale(1);
+    }
+    100% {
+      opacity: 0;
+      transform: translate(var(--s-dx), var(--s-dy)) scale(0.3);
+    }
+  }
+
+  /* Floating embers that drift up continuously */
+  .ty-ember {
+    position: absolute;
+    border-radius: 50%;
+    opacity: 0;
+    animation: emberRise var(--e-dur) var(--e-delay) ease-in-out infinite;
+  }
+  @keyframes emberRise {
+    0% { opacity: 0; transform: translateY(0) scale(0); }
+    20% { opacity: var(--e-peak); transform: scale(1); }
+    80% { opacity: var(--e-peak); }
+    100% { opacity: 0; transform: translateY(var(--e-rise)) scale(0.5); }
   }
 
   /* Scrollbar */
@@ -1031,9 +1143,17 @@ if (!gl) {
       </div>
     </div>
     <div id="bookingThankYou" class="thank-you" style="display:none">
-      <div class="ty-symbol">&#10022;</div>
-      <h3>Thank you</h3>
-      <p>Your request has been sent.<br>I'll get back to you soon.</p>
+      <div class="ty-burst" id="tyBurst"></div>
+      <div class="ty-orb">
+        <div class="orbit-ring" id="tyOrbitRing"></div>
+      </div>
+      <div class="ty-text">
+        <h3>Thank you</h3>
+      </div>
+      <div class="ty-text ty-text-delay">
+        <p class="ty-msg">Your request has been received.<br>We'll be in touch soon to confirm your reading.</p>
+        <p class="ty-note">Your booking is not confirmed until we contact you</p>
+      </div>
     </div>
   </div>
 </div>
@@ -1142,12 +1262,16 @@ if (!gl) {
     formDiv.style.display = 'none';
     thankDiv.style.display = 'block';
 
+    // Spawn celebration
+    spawnCelebration();
+
     // Reset after closing
     setTimeout(() => {
       overlay.classList.remove('active');
       setTimeout(() => {
         formDiv.style.display = 'block';
         thankDiv.style.display = 'none';
+        cleanCelebration();
         document.getElementById('bk-name').value = '';
         document.getElementById('bk-email').value = '';
         document.getElementById('bk-phone').value = '';
@@ -1157,9 +1281,81 @@ if (!gl) {
         document.getElementById('bk-message').value = '';
         submitBtn.disabled = false;
         submitBtn.textContent = 'Request Booking';
-      }, 500);
-    }, 2500);
+      }, 600);
+    }, 4500);
   });
+
+  // ── Celebration effects ──
+  function spawnCelebration() {
+    const burst = document.getElementById('tyBurst');
+    const ring = document.getElementById('tyOrbitRing');
+
+    // Orbit dots
+    ring.innerHTML = '';
+    for (let i = 0; i < 5; i++) {
+      const dot = document.createElement('div');
+      dot.className = 'orbit-dot';
+      const angle = (i / 5) * 360;
+      const rad = angle * Math.PI / 180;
+      const r = 50 + Math.random() * 5;
+      dot.style.left = (50 + Math.cos(rad) * r) + '%';
+      dot.style.top = (50 + Math.sin(rad) * r) + '%';
+      dot.style.width = (2 + Math.random() * 2) + 'px';
+      dot.style.height = dot.style.width;
+      dot.style.opacity = 0.4 + Math.random() * 0.5;
+      ring.appendChild(dot);
+    }
+
+    // Burst sparks from center
+    burst.innerHTML = '';
+    var modal = document.getElementById('bookingModal');
+    var cx = modal.offsetWidth / 2;
+    var cy = 100;
+    for (let i = 0; i < 30; i++) {
+      const s = document.createElement('div');
+      s.className = 'ty-spark';
+      const angle = Math.random() * Math.PI * 2;
+      const dist = 60 + Math.random() * 120;
+      const dx = Math.cos(angle) * dist;
+      const dy = Math.sin(angle) * dist - 20;
+      const size = 2 + Math.random() * 3;
+      s.style.left = cx + 'px';
+      s.style.top = cy + 'px';
+      s.style.width = size + 'px';
+      s.style.height = size + 'px';
+      s.style.background = 'rgba(' + (180 + Math.random()*40) + ',' + (140 + Math.random()*40) + ',255,' + (0.6 + Math.random()*0.4) + ')';
+      s.style.boxShadow = '0 0 ' + (4 + Math.random()*8) + 'px rgba(180,140,255,0.5)';
+      s.style.setProperty('--s-dx', dx + 'px');
+      s.style.setProperty('--s-dy', dy + 'px');
+      s.style.setProperty('--s-dur', (0.8 + Math.random() * 0.8) + 's');
+      s.style.setProperty('--s-delay', (Math.random() * 0.3) + 's');
+      s.style.setProperty('--s-peak', (0.5 + Math.random() * 0.5).toString());
+      burst.appendChild(s);
+    }
+
+    // Floating embers that persist
+    for (let i = 0; i < 14; i++) {
+      const e = document.createElement('div');
+      e.className = 'ty-ember';
+      const size = 1.5 + Math.random() * 2.5;
+      e.style.left = (10 + Math.random() * 80) + '%';
+      e.style.bottom = (5 + Math.random() * 20) + '%';
+      e.style.width = size + 'px';
+      e.style.height = size + 'px';
+      e.style.background = 'rgba(' + (180 + Math.random()*40) + ',' + (150 + Math.random()*40) + ',255,' + (0.5 + Math.random()*0.4) + ')';
+      e.style.boxShadow = '0 0 ' + (3 + Math.random()*5) + 'px rgba(170,130,255,0.4)';
+      e.style.setProperty('--e-dur', (2.5 + Math.random() * 3) + 's');
+      e.style.setProperty('--e-delay', (0.5 + Math.random() * 2) + 's');
+      e.style.setProperty('--e-peak', (0.3 + Math.random() * 0.5).toString());
+      e.style.setProperty('--e-rise', '-' + (60 + Math.random() * 100) + 'px');
+      burst.appendChild(e);
+    }
+  }
+
+  function cleanCelebration() {
+    document.getElementById('tyBurst').innerHTML = '';
+    document.getElementById('tyOrbitRing').innerHTML = '';
+  }
 })();
 </script>
 
