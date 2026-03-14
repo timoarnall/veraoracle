@@ -834,6 +834,8 @@ if (!gl) {
       <input type="text" id="bk-name" placeholder="Your name" autocomplete="name">
       <label>Email</label>
       <input type="email" id="bk-email" placeholder="your@email.com" autocomplete="email">
+      <label>Phone</label>
+      <input type="tel" id="bk-phone" placeholder="Your phone number" autocomplete="tel">
       <div class="row">
         <div>
           <label>Preferred date</label>
@@ -919,13 +921,14 @@ if (!gl) {
   submitBtn.addEventListener('click', async function() {
     const name  = document.getElementById('bk-name').value.trim();
     const email = document.getElementById('bk-email').value.trim();
+    const phone = document.getElementById('bk-phone').value.trim();
     const date  = document.getElementById('bk-date').value;
     const time  = document.getElementById('bk-time').value;
     const type  = document.getElementById('bk-type').value;
     const msg   = document.getElementById('bk-message').value.trim();
 
-    if (!name || !email) {
-      submitBtn.textContent = 'Please enter name and email';
+    if (!name || (!email && !phone)) {
+      submitBtn.textContent = !name ? 'Please enter your name' : 'Please enter email or phone';
       setTimeout(() => { submitBtn.textContent = 'Request Booking'; }, 2000);
       return;
     }
@@ -937,7 +940,8 @@ if (!gl) {
       .from('booking_requests')
       .insert({
         name: name,
-        email: email,
+        email: email || null,
+        phone: phone || null,
         preferred_date: date || null,
         preferred_time: time || null,
         reading_type: type || null,
@@ -967,6 +971,7 @@ if (!gl) {
         thankDiv.style.display = 'none';
         document.getElementById('bk-name').value = '';
         document.getElementById('bk-email').value = '';
+        document.getElementById('bk-phone').value = '';
         document.getElementById('bk-date').value = '';
         document.getElementById('bk-time').value = '';
         document.getElementById('bk-type').value = '';
