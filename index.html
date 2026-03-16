@@ -826,10 +826,38 @@ if (!gl) {
       return f;
     }
 
+    // 8 palettes (c1/c2/c3/sparkle) — cycle over ~160s (20s each)
+    // comp: 0=c1, 1=c2, 2=c3, 3=sparkle
+    vec3 pal(float idx, float comp) {
+      // Purple / rose / blue (original)
+      if (idx < 0.5) return comp < 0.5 ? vec3(0.25,0.05,0.45) : comp < 1.5 ? vec3(0.55,0.08,0.40) : comp < 2.5 ? vec3(0.15,0.25,0.50) : vec3(0.7,0.5,0.9);
+      // Deep indigo / magenta / teal
+      if (idx < 1.5) return comp < 0.5 ? vec3(0.12,0.05,0.40) : comp < 1.5 ? vec3(0.50,0.05,0.35) : comp < 2.5 ? vec3(0.05,0.25,0.40) : vec3(0.6,0.4,0.9);
+      // Midnight blue / violet / gold
+      if (idx < 2.5) return comp < 0.5 ? vec3(0.08,0.08,0.35) : comp < 1.5 ? vec3(0.35,0.10,0.50) : comp < 2.5 ? vec3(0.30,0.22,0.08) : vec3(0.8,0.7,0.5);
+      // Sapphire / cyan / violet
+      if (idx < 3.5) return comp < 0.5 ? vec3(0.08,0.12,0.45) : comp < 1.5 ? vec3(0.08,0.30,0.40) : comp < 2.5 ? vec3(0.30,0.08,0.40) : vec3(0.5,0.6,0.9);
+      // Northern lights / green / purple
+      if (idx < 4.5) return comp < 0.5 ? vec3(0.05,0.30,0.20) : comp < 1.5 ? vec3(0.08,0.25,0.35) : comp < 2.5 ? vec3(0.30,0.05,0.40) : vec3(0.4,0.9,0.6);
+      // Rose / blush / deep blue
+      if (idx < 5.5) return comp < 0.5 ? vec3(0.45,0.08,0.20) : comp < 1.5 ? vec3(0.50,0.15,0.25) : comp < 2.5 ? vec3(0.10,0.10,0.45) : vec3(0.9,0.5,0.6);
+      // Amethyst / crystal / ice
+      if (idx < 6.5) return comp < 0.5 ? vec3(0.22,0.08,0.38) : comp < 1.5 ? vec3(0.18,0.15,0.40) : comp < 2.5 ? vec3(0.15,0.25,0.35) : vec3(0.7,0.6,0.95);
+      // Sunset / magenta / deep blue
+      return comp < 0.5 ? vec3(0.50,0.15,0.08) : comp < 1.5 ? vec3(0.55,0.08,0.30) : comp < 2.5 ? vec3(0.08,0.08,0.40) : vec3(0.9,0.5,0.7);
+    }
+
+    vec3 currentSparkle; // set by auraColor, read by sparkle layer
+
     vec3 auraColor(float t, float energy) {
-      vec3 c1 = vec3(0.25, 0.05, 0.45);
-      vec3 c2 = vec3(0.55, 0.08, 0.40);
-      vec3 c3 = vec3(0.15, 0.25, 0.50);
+      float cycle = fract(u_time / 160.0) * 8.0; // 160s full cycle
+      float idx = floor(cycle);
+      float blend = smoothstep(0.0, 1.0, fract(cycle));
+      float next = mod(idx + 1.0, 8.0);
+      vec3 c1 = mix(pal(idx, 0.0), pal(next, 0.0), blend);
+      vec3 c2 = mix(pal(idx, 1.0), pal(next, 1.0), blend);
+      vec3 c3 = mix(pal(idx, 2.0), pal(next, 2.0), blend);
+      currentSparkle = mix(pal(idx, 3.0), pal(next, 3.0), blend);
       float phase = t * 3.0;
       vec3 col;
       if (phase < 1.0) col = mix(c1, c2, phase);
@@ -915,7 +943,7 @@ if (!gl) {
         float sparkle = pow(max(n * n2, 0.0), 3.0) * 2.0;
         sparkle *= exp(-length(p) * 1.0);
         sparkle *= 1.0 + energy * 2.0;
-        color += vec3(0.7, 0.5, 0.9) * sparkle;
+        color += currentSparkle * sparkle;
       }
 
       // Layer 5 — halo
@@ -925,9 +953,13 @@ if (!gl) {
         float halo = exp(-radius * haloSize) * 0.15;
         float n = fbm(vec3(p * 0.7, t * 0.3 + 30.0));
         halo *= (0.7 + 0.3 * n);
+        float cycle = fract(u_time / 160.0) * 8.0;
+        float hIdx = floor(cycle);
+        float hBlend = smoothstep(0.0, 1.0, fract(cycle));
+        float hNext = mod(hIdx + 1.0, 8.0);
         vec3 haloCol = mix(
-          vec3(0.15, 0.08, 0.35),
-          vec3(0.08, 0.20, 0.30),
+          mix(pal(hIdx, 0.0), pal(hNext, 0.0), hBlend) * 0.6,
+          mix(pal(hIdx, 2.0), pal(hNext, 2.0), hBlend) * 0.6,
           0.5 + 0.5 * sin(t * 0.5 + scrollPhase * 0.2)
         );
         color += haloCol * halo;
