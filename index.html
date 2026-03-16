@@ -1399,7 +1399,7 @@ if (!gl) {
     }).catch(function() {});
 
     var firstName = name.split(' ')[0];
-    document.getElementById('tyHeading').textContent = 'Thank you' + (firstName ? ' ' + firstName : '');
+    document.getElementById('tyHeading').textContent = firstName ? firstName + '! Thank you' : 'Thank you';
 
     formDiv.style.display = 'none';
     thankDiv.style.display = 'block';
