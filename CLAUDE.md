@@ -140,12 +140,23 @@ Career & purpose, Love & relationships, Family & home, Money & abundance, Grief 
 
 ---
 
-## Page view analytics
+## Page view analytics & funnel tracking
 
-**On veraoracle.com (client-side):**
-1. On page load, fetches country from `https://api.country.is` (returns 2-letter code)
-2. INSERTs into `page_views`: path, referrer (from `document.referrer`), country
-3. Fire-and-forget — doesn't block page rendering
+**Tracking method:** Direct REST API calls to Supabase (`fetch` to `/rest/v1/page_views`), independent of the Supabase JS client. Uses a reusable `logView(data)` helper function.
+
+**Three events tracked (visitor funnel):**
+
+| Path | When | Purpose |
+|---|---|---|
+| `/` | Page load | Visitor landed on site |
+| `/book-click` | "Book a Reading" button clicked | Opened the booking modal |
+| `/book-submit` | Booking form successfully submitted | Completed a booking |
+
+This creates a conversion funnel: visits → opened form → completed booking.
+
+**Country detection:** On page load, fetches country code from `https://api.country.is` (returns 2-letter ISO code). Attached to the page load event. Fire-and-forget — doesn't block rendering.
+
+**Referrer:** Captured from `document.referrer` on all events.
 
 **In Parinameh (overview tab, bottom):**
 - Fetches counts for today/this week/this month using `select('id', { count: 'exact', head: true })`
