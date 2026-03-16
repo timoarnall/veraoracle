@@ -1498,8 +1498,8 @@ if (!gl) {
     }
     // ── Mini aura shader on the orb ──
     var orbCanvas = document.getElementById('tyOrbCanvas');
-    orbCanvas.width = 64;
-    orbCanvas.height = 64;
+    orbCanvas.width = 128;
+    orbCanvas.height = 128;
     var ogl = orbCanvas.getContext('webgl', { alpha: true, premultipliedAlpha: true });
     var ut = null;
     if (ogl) {
@@ -1534,7 +1534,7 @@ if (!gl) {
         '  m=m*m;return 42.0*dot(m*m,vec4(dot(p0,x0),dot(p1,x1),dot(p2,x2),dot(p3,x3)));',
         '}',
         'void main(){',
-        '  vec2 uv=(gl_FragCoord.xy/64.0)*2.0-1.0;',
+        '  vec2 uv=(gl_FragCoord.xy/128.0)*2.0-1.0;',
         '  float r=length(uv);',
         '  if(r>1.0){gl_FragColor=vec4(0);return;}',
         '  float orbR=0.571;',
@@ -1568,7 +1568,7 @@ if (!gl) {
       ogl.enableVertexAttribArray(opos);
       ogl.vertexAttribPointer(opos, 2, ogl.FLOAT, false, 0, 0);
       ut = ogl.getUniformLocation(oprg, 't');
-      ogl.viewport(0, 0, 64, 64);
+      ogl.viewport(0, 0, 128, 128);
       ogl.enable(ogl.BLEND);
       ogl.blendFunc(ogl.ONE, ogl.ONE_MINUS_SRC_ALPHA);
     }
@@ -1576,12 +1576,8 @@ if (!gl) {
     // Single animation loop for orbits + shader, throttled to 30fps
     var celebAnim = null;
     var orbStart = performance.now();
-    var lastFrame = 0;
     function animateCelebration(now) {
       celebAnim = requestAnimationFrame(animateCelebration);
-      // Throttle to ~30fps — skip frame if <30ms since last
-      if (now - lastFrame < 30) return;
-      lastFrame = now;
       var t = now * 0.001;
       // Orbit dots — use transform (composited) instead of left/top/width/height (layout)
       for (var i = 0; i < orbitDots.length; i++) {
