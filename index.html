@@ -99,9 +99,14 @@
     border-radius: 980px;
     transition: all 0.5s ease;
     display: inline-block;
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
     background: rgba(255,255,255,0.04);
+    animation: blurIn 0.01s 4.8s both;
+  }
+  @keyframes blurIn {
+    to {
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
   }
 
   .booking a:hover {
