@@ -1254,17 +1254,11 @@ if (!gl) {
   const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
   // Track page view (fire-and-forget, with country)
-  fetch('https://ipapi.co/country_name/').then(function(r) { return r.text(); }).then(function(country) {
-    sb.from('page_views').insert({
-      path: window.location.pathname,
-      referrer: document.referrer || null,
-      country: country || null,
-    });
-  }).catch(function() {
-    sb.from('page_views').insert({
-      path: window.location.pathname,
-      referrer: document.referrer || null,
-    });
+  var pvData = { path: window.location.pathname, referrer: document.referrer || null };
+  fetch('https://api.country.is').then(function(r) { return r.json(); }).then(function(geo) {
+    pvData.country = geo.country || null;
+  }).catch(function() {}).finally(function() {
+    sb.from('page_views').insert(pvData);
   });
 
   // Populate time slots (15-min intervals, 08:00–22:00) to match Parinameh
