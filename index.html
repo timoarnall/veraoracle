@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><defs><radialGradient id='g'><stop offset='0%25' stop-color='%23c8a0ff'/><stop offset='100%25' stop-color='%23402060'/></radialGradient></defs><circle cx='16' cy='16' r='14' fill='url(%23g)'/></svg>">
 <title>Vera Oracle — Tarot Readings & Spiritual Guidance in Richmond, London</title>
 <meta name="description" content="Book a tarot reading with Vera Oracle in Richmond upon Thames, London. Intuitive tarot card readings, spiritual guidance and oracle sessions for love, career, life purpose and more. In-person and online readings available in Southwest London.">
 <meta name="keywords" content="tarot reading Richmond, tarot reader London, psychic reading Richmond upon Thames, spiritual advisor London, oracle card reading, intuitive guidance, energy healing Richmond, tarot reading Southwest London, spiritual counseling, book tarot reading London, clairvoyant Richmond, tarot reader near me, aura reading, life guidance, holistic healing Richmond upon Thames">
@@ -1251,6 +1252,12 @@ if (!gl) {
   const SUPABASE_URL = 'https://odqnbtnbbvqktaqejuxh.supabase.co';
   const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9kcW5idG5iYnZxa3RhcWVqdXhoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM0MjI3NDIsImV4cCI6MjA4ODk5ODc0Mn0.1D-imafIpPFdcBRO2BZAry2h3cQs60dfvOcRJyVYxqA';
   const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  // Track page view (fire-and-forget)
+  sb.from('page_views').insert({
+    path: window.location.pathname,
+    referrer: document.referrer || null,
+  }).then(function() {});
 
   // Populate time slots (15-min intervals, 08:00–22:00) to match Parinameh
   const timeSelect = document.getElementById('bk-time');
