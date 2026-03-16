@@ -551,10 +551,11 @@
   }
   .ty-orb .orbit-dot {
     position: absolute;
+    left: 50%; top: 50%;
     width: 3px; height: 3px;
     border-radius: 50%;
     background: rgba(200,170,255,0.7);
-    box-shadow: 0 0 6px rgba(180,140,255,0.5);
+    will-change: transform, opacity;
   }
 
   /* Text entrance */
@@ -1457,52 +1458,12 @@ if (!gl) {
         wobbleAmt: 0.15 + Math.random() * 0.25,
       });
     }
-    // Animate orbits
-    var orbitAnim = null;
-    function animateOrbits() {
-      var t = performance.now() * 0.001;
-      for (var i = 0; i < orbitDots.length; i++) {
-        var d = orbitDots[i];
-        var a = d.phase + t * d.speed;
-        // Position on circle
-        var x = Math.cos(a) * d.radius;
-        var y = Math.sin(a) * d.radius;
-        var z = 0;
-        // Wobbling tilt — orbit plane drifts over time
-        var tx = d.tiltX + Math.sin(t * d.wobbleSpeed) * d.wobbleAmt;
-        var tz = d.tiltZ + Math.cos(t * d.wobbleSpeed * 0.7) * d.wobbleAmt;
-        // Tilt around X axis
-        var cosX = Math.cos(tx), sinX = Math.sin(tx);
-        var y2 = y * cosX - z * sinX;
-        var z2 = y * sinX + z * cosX;
-        // Tilt around Z axis
-        var cosZ = Math.cos(tz), sinZ = Math.sin(tz);
-        var x2 = x * cosZ - y2 * sinZ;
-        var y3 = x * sinZ + y2 * cosZ;
-        // z2 is depth — use for size and opacity (front = bigger/brighter)
-        var depthScale = 0.6 + 0.4 * ((z2 / d.radius) * 0.5 + 0.5);
-        var s = d.size * depthScale;
-        d.el.style.left = (50 + x2) + '%';
-        d.el.style.top = (50 + y3) + '%';
-        d.el.style.width = s + 'px';
-        d.el.style.height = s + 'px';
-        var inFront = z2 > 0;
-        d.el.style.opacity = inFront ? (0.4 + 0.5 * depthScale).toFixed(2) : (0.15 + 0.15 * depthScale).toFixed(2);
-        d.el.style.zIndex = inFront ? 3 : 1;
-        d.el.style.boxShadow = inFront
-          ? '0 0 ' + (4 + 4 * depthScale).toFixed(0) + 'px rgba(180,140,255,' + (0.3 + 0.4 * depthScale).toFixed(2) + ')'
-          : 'none';
-      }
-      orbitAnim = requestAnimationFrame(animateOrbits);
-    }
-    animateOrbits();
-    ring._stopOrbit = function() { cancelAnimationFrame(orbitAnim); };
-
     // ── Mini aura shader on the orb ──
     var orbCanvas = document.getElementById('tyOrbCanvas');
     orbCanvas.width = 128;
     orbCanvas.height = 128;
     var ogl = orbCanvas.getContext('webgl', { alpha: true, premultipliedAlpha: true });
+    var ut = null;
     if (ogl) {
       var ovs = ogl.createShader(ogl.VERTEX_SHADER);
       ogl.shaderSource(ovs, 'attribute vec2 p;void main(){gl_Position=vec4(p,0,1);}');
@@ -1568,23 +1529,56 @@ if (!gl) {
       var opos = ogl.getAttribLocation(oprg, 'p');
       ogl.enableVertexAttribArray(opos);
       ogl.vertexAttribPointer(opos, 2, ogl.FLOAT, false, 0, 0);
-      var ut = ogl.getUniformLocation(oprg, 't');
+      ut = ogl.getUniformLocation(oprg, 't');
       ogl.viewport(0, 0, 128, 128);
       ogl.enable(ogl.BLEND);
       ogl.blendFunc(ogl.ONE, ogl.ONE_MINUS_SRC_ALPHA);
-      var orbShaderAnim = null;
-      var orbStart = performance.now();
-      function renderOrb() {
-        var elapsed = (performance.now() - orbStart) / 1000.0;
-        ogl.uniform1f(ut, elapsed);
+    }
+
+    // Single animation loop for orbits + shader, throttled to 30fps
+    var celebAnim = null;
+    var orbStart = performance.now();
+    var lastFrame = 0;
+    function animateCelebration(now) {
+      celebAnim = requestAnimationFrame(animateCelebration);
+      // Throttle to ~30fps — skip frame if <30ms since last
+      if (now - lastFrame < 30) return;
+      lastFrame = now;
+      var t = now * 0.001;
+      // Orbit dots — use transform (composited) instead of left/top/width/height (layout)
+      for (var i = 0; i < orbitDots.length; i++) {
+        var d = orbitDots[i];
+        var a = d.phase + t * d.speed;
+        var x = Math.cos(a) * d.radius;
+        var y = Math.sin(a) * d.radius;
+        var tx = d.tiltX + Math.sin(t * d.wobbleSpeed) * d.wobbleAmt;
+        var tz = d.tiltZ + Math.cos(t * d.wobbleSpeed * 0.7) * d.wobbleAmt;
+        var cosX = Math.cos(tx), sinX = Math.sin(tx);
+        var y2 = y * cosX;
+        var z2 = y * sinX;
+        var cosZ = Math.cos(tz), sinZ = Math.sin(tz);
+        var x2 = x * cosZ - y2 * sinZ;
+        var y3 = x * sinZ + y2 * cosZ;
+        var depthScale = 0.6 + 0.4 * ((z2 / d.radius) * 0.5 + 0.5);
+        var s = d.size * depthScale;
+        var inFront = z2 > 0;
+        d.el.style.transform = 'translate(-50%,-50%) translate(' + x2.toFixed(1) + 'px,' + y3.toFixed(1) + 'px) scale(' + (s / d.size).toFixed(2) + ')';
+        d.el.style.opacity = inFront ? (0.4 + 0.5 * depthScale).toFixed(2) : (0.15 + 0.15 * depthScale).toFixed(2);
+        d.el.style.zIndex = inFront ? 3 : 1;
+        d.el.style.boxShadow = inFront
+          ? '0 0 ' + (4 + 4 * depthScale).toFixed(0) + 'px rgba(180,140,255,' + (0.3 + 0.4 * depthScale).toFixed(2) + ')'
+          : 'none';
+      }
+      // Orb shader
+      if (ogl && ut) {
+        ogl.uniform1f(ut, (now - orbStart) / 1000.0);
         ogl.clearColor(0, 0, 0, 0);
         ogl.clear(ogl.COLOR_BUFFER_BIT);
         ogl.drawArrays(ogl.TRIANGLE_STRIP, 0, 4);
-        orbShaderAnim = requestAnimationFrame(renderOrb);
       }
-      renderOrb();
-      ring._stopOrbShader = function() { cancelAnimationFrame(orbShaderAnim); };
     }
+    celebAnim = requestAnimationFrame(animateCelebration);
+    ring._stopOrbit = ring._stopOrbShader = function() { cancelAnimationFrame(celebAnim); };
 
     // Burst sparks from center
     burst.innerHTML = '';
