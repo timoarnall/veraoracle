@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Orb Shader Comparison</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #0c0814;
+    color: rgba(255,255,255,0.85);
+    font-family: -apple-system, 'SF Pro Display', Inter, sans-serif;
+    padding: 40px 20px;
+  }
+  h1 {
+    text-align: center;
+    font-size: 1.5rem;
+    font-weight: 500;
+    margin-bottom: 10px;
+    color: rgba(255,255,255,0.6);
+  }
+  .subtitle {
+    text-align: center;
+    font-size: 0.85rem;
+    color: rgba(255,255,255,0.3);
+    margin-bottom: 40px;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 40px;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  .variant {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .orb-wrap {
+    position: relative;
+    width: 140px; height: 140px;
+    margin-bottom: 20px;
+    border-radius: 50%;
+  }
+  /* Canvas is LARGER than the orb — no border-radius clip, so shards spill out */
+  .orb-wrap canvas {
+    position: absolute;
+    z-index: 1;
+  }
+  /* Spill canvases: 40px overflow on each side */
+  .spill canvas {
+    inset: -40px;
+    width: calc(100% + 80px);
+    height: calc(100% + 80px);
+  }
+  /* Original: clipped to circle */
+  .nospill canvas {
+    inset: 0;
+    width: 100%; height: 100%;
+    border-radius: 50%;
+  }
+  .orb-wrap::before {
+    content: '';
+    position: absolute;
+    inset: -40px;
+    border-radius: 50%;
+    background: radial-gradient(circle,
+      rgba(180,140,255,0.2) 0%,
+      rgba(140,100,220,0.12) 35%,
+      rgba(100,80,200,0.05) 60%,
+      transparent 80%
+    );
+    animation: orbBreath 3s ease-in-out infinite;
+    z-index: 0;
+  }
+  .orb-wrap::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: radial-gradient(circle at 42% 38%,
+      rgba(220,200,255,0.15) 0%,
+      rgba(160,130,240,0.08) 40%,
+      transparent 65%
+    );
+    box-shadow:
+      0 0 30px rgba(160,120,255,0.25),
+      0 0 60px rgba(140,100,220,0.12),
+      0 0 100px rgba(120,80,200,0.06);
+    animation: orbPulse 2s ease-in-out infinite;
+    z-index: 2;
+  }
+  @keyframes orbBreath {
+    0%, 100% { transform: scale(1); opacity: 0.6; }
+    50% { transform: scale(1.15); opacity: 1; }
+  }
+  @keyframes orbPulse {
+    0%, 100% { box-shadow: 0 0 30px rgba(160,120,255,0.25), 0 0 60px rgba(140,100,220,0.12), 0 0 100px rgba(120,80,200,0.06); }
+    50% { box-shadow: 0 0 40px rgba(160,120,255,0.3), 0 0 80px rgba(140,100,220,0.15), 0 0 120px rgba(120,80,200,0.08); }
+  }
+  .label {
+    font-size: 1rem;
+    font-weight: 500;
+    margin-bottom: 6px;
+  }
+  .desc {
+    font-size: 0.8rem;
+    color: rgba(255,255,255,0.35);
+    text-align: center;
+    max-width: 260px;
+    line-height: 1.5;
+  }
+</style>
+</head>
+<body>
+<h1>Orb Variations — Larger Shards, Spilling Out</h1>
+<p class="subtitle">Canvas extends beyond the orb circle so noise shapes bleed into the glow.</p>
+
+<div class="grid">
+  <div class="variant">
+    <div class="orb-wrap nospill"><canvas id="c0" width="256" height="256"></canvas></div>
+    <div class="label">A — Original (reference)</div>
+    <div class="desc">Current shader, clipped to circle. For comparison.</div>
+  </div>
+  <div class="variant">
+    <div class="orb-wrap spill"><canvas id="c1" width="256" height="256"></canvas></div>
+    <div class="label">B — Larger shards, gentle spill</div>
+    <div class="desc">Lower frequency (bigger shapes), brighter, soft fade past edge.</div>
+  </div>
+  <div class="variant">
+    <div class="orb-wrap spill"><canvas id="c2" width="256" height="256"></canvas></div>
+    <div class="label">C — Bigger + blurrier shards</div>
+    <div class="desc">Even lower freq, 2-octave FBM for softer edges. More atmospheric spill.</div>
+  </div>
+  <div class="variant">
+    <div class="orb-wrap spill"><canvas id="c3" width="256" height="256"></canvas></div>
+    <div class="label">D — Bold shards, strong spill</div>
+    <div class="desc">Large bright shards, prominent edge bleed. Most dramatic.</div>
+  </div>
+  <div class="variant">
+    <div class="orb-wrap spill"><canvas id="c4" width="256" height="256"></canvas></div>
+    <div class="label">E — Subtle spill, warm core</div>
+    <div class="desc">Medium shards with warm bright center. Shards just kiss the edge.</div>
+  </div>
+  <div class="variant">
+    <div class="orb-wrap spill"><canvas id="c5" width="256" height="256"></canvas></div>
+    <div class="label">F — Blurred shards, deep spill</div>
+    <div class="desc">Soft 2-octave shapes that extend well past the orb. Ethereal.</div>
+  </div>
+</div>
+
+<script>
+var snoiseCode = [
+  'vec3 mod289(vec3 x){return x-floor(x/289.0)*289.0;}',
+  'vec4 mod289(vec4 x){return x-floor(x/289.0)*289.0;}',
+  'vec4 perm(vec4 x){return mod289(((x*34.0)+1.0)*x);}',
+  'float snoise(vec3 v){',
+  '  const vec2 C=vec2(1.0/6.0,1.0/3.0);',
+  '  vec3 i=floor(v+dot(v,C.yyy));vec3 x0=v-i+dot(i,C.xxx);',
+  '  vec3 g=step(x0.yzx,x0.xyz);vec3 l=1.0-g;',
+  '  vec3 i1=min(g,l.zxy);vec3 i2=max(g,l.zxy);',
+  '  vec3 x1=x0-i1+C.xxx;vec3 x2=x0-i2+C.yyy;vec3 x3=x0-0.5;',
+  '  i=mod289(i);',
+  '  vec4 p=perm(perm(perm(i.z+vec4(0,i1.z,i2.z,1))+i.y+vec4(0,i1.y,i2.y,1))+i.x+vec4(0,i1.x,i2.x,1));',
+  '  vec4 j=p-49.0*floor(p/49.0);',
+  '  vec4 x_=floor(j/7.0)/7.0-0.5;vec4 y_=(j-7.0*floor(j/7.0))/7.0-0.5;',
+  '  vec4 h=1.0-abs(x_)-abs(y_);',
+  '  vec4 a0=vec4(x_.xy,y_.xy)+floor(vec4(x_.xy,y_.xy))*2.0+1.0;',
+  '  vec4 a1=vec4(x_.zw,y_.zw)+floor(vec4(x_.zw,y_.zw))*2.0+1.0;',
+  '  vec3 p0=vec3(a0.xy,h.x);vec3 p1=vec3(a0.zw,h.y);',
+  '  vec3 p2=vec3(a1.xy,h.z);vec3 p3=vec3(a1.zw,h.w);',
+  '  vec4 norm=1.79284-0.85373*vec4(dot(p0,p0),dot(p1,p1),dot(p2,p2),dot(p3,p3));',
+  '  p0*=norm.x;p1*=norm.y;p2*=norm.z;p3*=norm.w;',
+  '  vec4 m=max(0.6-vec4(dot(x0,x0),dot(x1,x1),dot(x2,x2),dot(x3,x3)),0.0);',
+  '  m=m*m;return 42.0*dot(m*m,vec4(dot(p0,x0),dot(p1,x1),dot(p2,x2),dot(p3,x3)));',
+  '}',
+  'float fbm2(vec3 p){float f=0.0;float a=0.5;for(int i=0;i<2;i++){f+=a*snoise(p);p*=2.1;a*=0.5;}return f;}',
+].join('\n');
+
+// Canvas size for spill variants: the canvas is 256px but represents a larger area
+// The orb "circle" sits at r=0.636 in UV space (140/(140+80)), so r<0.636 is inside the orb
+
+// A — Original (reference, 256px = orb circle, clipped)
+var shaderA = [
+  'precision mediump float;',
+  'uniform float t;',
+  snoiseCode,
+  'void main(){',
+  '  vec2 uv=(gl_FragCoord.xy/256.0)*2.0-1.0;',
+  '  float r=length(uv);',
+  '  if(r>1.0){gl_FragColor=vec4(0);return;}',
+  '  float n1=snoise(vec3(uv*0.8,t*0.12))*0.5+0.5;',
+  '  float n2=snoise(vec3(uv*0.6+3.0,t*0.09+10.0))*0.5+0.5;',
+  '  vec3 c1=vec3(0.18,0.04,0.35);',
+  '  vec3 c2=vec3(0.35,0.06,0.30);',
+  '  vec3 c3=vec3(0.10,0.18,0.38);',
+  '  vec3 col=mix(c1,c2,n1);col=mix(col,c3,n2*0.5);',
+  '  col+=vec3(0.5,0.35,0.7)*pow(max(n1*n2,0.0),2.0)*0.3;',
+  '  float edge=smoothstep(1.0,0.3,r);',
+  '  col*=edge*0.7;',
+  '  float a=edge*smoothstep(1.0,0.8,r)*0.85;',
+  '  gl_FragColor=vec4(col*a,a);',
+  '}',
+].join('\n');
+
+// For spill shaders: canvas covers 220x220 area but orb is 140x140 at center
+// orbR = 140/220 = 0.636 in normalized coords
+// We work in UV -1..1 where the full canvas edge is 1.0 and the orb edge is ~0.636
+
+// B — Larger shards, gentle spill
+var shaderB = [
+  'precision mediump float;',
+  'uniform float t;',
+  snoiseCode,
+  'void main(){',
+  '  vec2 uv=(gl_FragCoord.xy/256.0)*2.0-1.0;',
+  '  float r=length(uv);',
+  '  if(r>1.0){gl_FragColor=vec4(0);return;}',
+  '  float orbR=0.636;',
+  // Larger shards: lower frequency
+  '  float n1=snoise(vec3(uv*0.5,t*0.12))*0.5+0.5;',
+  '  float n2=snoise(vec3(uv*0.4+3.0,t*0.09+10.0))*0.5+0.5;',
+  '  vec3 c1=vec3(0.22,0.05,0.42);',
+  '  vec3 c2=vec3(0.42,0.08,0.36);',
+  '  vec3 c3=vec3(0.12,0.22,0.48);',
+  '  vec3 col=mix(c1,c2,n1);col=mix(col,c3,n2*0.5);',
+  // Brighter sparkle
+  '  col+=vec3(0.6,0.4,0.8)*pow(max(n1*n2,0.0),1.5)*0.5;',
+  // Bright center
+  '  col+=vec3(0.5,0.35,0.7)*exp(-r*r*4.0)*0.3;',
+  // Inside orb: full brightness. Outside: shards fade out
+  '  float inner=smoothstep(orbR+0.05,orbR-0.15,r);',
+  '  float spill=smoothstep(1.0,orbR-0.1,r);',
+  '  float brightness=mix(spill*0.5,1.0,inner);',
+  '  col*=brightness*0.9;',
+  '  float a=smoothstep(1.0,orbR-0.15,r)*0.9;',
+  // Extra fade for spill zone — shards visible but fading
+  '  float spillFade=(1.0-inner)*spill*max(n1-0.3,0.0)*1.2;',
+  '  a=max(a*inner, spillFade)*0.9;',
+  '  a=min(a,0.9);',
+  '  gl_FragColor=vec4(col*a,a);',
+  '}',
+].join('\n');
+
+// C — Bigger + blurrier (2-octave FBM for softer edges)
+var shaderC = [
+  'precision mediump float;',
+  'uniform float t;',
+  snoiseCode,
+  'void main(){',
+  '  vec2 uv=(gl_FragCoord.xy/256.0)*2.0-1.0;',
+  '  float r=length(uv);',
+  '  if(r>1.0){gl_FragColor=vec4(0);return;}',
+  '  float orbR=0.636;',
+  // 2-octave FBM for blurrier shapes
+  '  float n1=fbm2(vec3(uv*0.6,t*0.1))*0.5+0.5;',
+  '  float n2=fbm2(vec3(uv*0.45+3.0,t*0.07+10.0))*0.5+0.5;',
+  '  vec3 c1=vec3(0.22,0.05,0.42);',
+  '  vec3 c2=vec3(0.42,0.08,0.36);',
+  '  vec3 c3=vec3(0.12,0.22,0.48);',
+  '  vec3 col=mix(c1,c2,n1);col=mix(col,c3,n2*0.5);',
+  '  col+=vec3(0.55,0.38,0.75)*pow(max(n1*n2,0.0),1.5)*0.5;',
+  // Warm center
+  '  col+=vec3(0.5,0.35,0.7)*exp(-r*r*3.5)*0.35;',
+  // Spill: noise shapes bleed past the orb edge
+  '  float inner=smoothstep(orbR+0.08,orbR-0.2,r);',
+  '  float spill=smoothstep(1.0,orbR-0.1,r);',
+  '  float noiseSpill=max(n1*n2-0.15,0.0)*1.5;',
+  '  float a=inner*0.9+((1.0-inner)*spill*noiseSpill*0.7);',
+  '  a=min(a,0.9);',
+  '  col*=mix(spill*0.6,1.0,inner)*0.9;',
+  '  gl_FragColor=vec4(col*a,a);',
+  '}',
+].join('\n');
+
+// D — Bold shards, strong spill
+var shaderD = [
+  'precision mediump float;',
+  'uniform float t;',
+  snoiseCode,
+  'void main(){',
+  '  vec2 uv=(gl_FragCoord.xy/256.0)*2.0-1.0;',
+  '  float r=length(uv);',
+  '  if(r>1.0){gl_FragColor=vec4(0);return;}',
+  '  float orbR=0.636;',
+  // Large bold shards
+  '  float n1=snoise(vec3(uv*0.45,t*0.12))*0.5+0.5;',
+  '  float n2=snoise(vec3(uv*0.35+3.0,t*0.09+10.0))*0.5+0.5;',
+  '  vec3 c1=vec3(0.25,0.06,0.45);',
+  '  vec3 c2=vec3(0.48,0.10,0.40);',
+  '  vec3 c3=vec3(0.14,0.24,0.52);',
+  '  vec3 col=mix(c1,c2,n1);col=mix(col,c3,n2*0.5);',
+  // Strong highlights
+  '  col+=vec3(0.7,0.5,0.9)*pow(max(n1*n2,0.0),1.2)*0.6;',
+  // Bright core
+  '  col+=vec3(0.6,0.4,0.8)*exp(-r*r*3.0)*0.4;',
+  // Strong spill — shards push well past edge
+  '  float inner=smoothstep(orbR+0.1,orbR-0.2,r);',
+  '  float outerFade=smoothstep(1.0,orbR*0.7,r);',
+  '  float noiseSpill=max(n1-0.25,0.0)*2.0;',
+  '  float a=inner*0.92+((1.0-inner)*outerFade*noiseSpill*0.8);',
+  '  a=min(a,0.92);',
+  '  col*=mix(outerFade*0.7,1.0,inner)*0.95;',
+  '  gl_FragColor=vec4(col*a,a);',
+  '}',
+].join('\n');
+
+// E — Subtle spill, warm core
+var shaderE = [
+  'precision mediump float;',
+  'uniform float t;',
+  snoiseCode,
+  'void main(){',
+  '  vec2 uv=(gl_FragCoord.xy/256.0)*2.0-1.0;',
+  '  float r=length(uv);',
+  '  if(r>1.0){gl_FragColor=vec4(0);return;}',
+  '  float orbR=0.636;',
+  // Medium-large shards
+  '  float n1=snoise(vec3(uv*0.55,t*0.12))*0.5+0.5;',
+  '  float n2=snoise(vec3(uv*0.5+3.0,t*0.09+10.0))*0.5+0.5;',
+  '  vec3 c1=vec3(0.22,0.05,0.42);',
+  '  vec3 c2=vec3(0.42,0.08,0.36);',
+  '  vec3 c3=vec3(0.12,0.22,0.48);',
+  '  vec3 col=mix(c1,c2,n1);col=mix(col,c3,n2*0.5);',
+  '  col+=vec3(0.55,0.4,0.75)*pow(max(n1*n2,0.0),1.5)*0.4;',
+  // Warm bright center
+  '  col+=vec3(0.6,0.45,0.8)*exp(-r*r*5.0)*0.45;',
+  // Subtle spill — just kissing the edge
+  '  float inner=smoothstep(orbR+0.03,orbR-0.15,r);',
+  '  float spill=smoothstep(0.9,orbR-0.1,r);',
+  '  float noiseSpill=max(n1*n2-0.25,0.0)*1.5;',
+  '  float a=inner*0.9+((1.0-inner)*spill*noiseSpill*0.5);',
+  '  a=min(a,0.9);',
+  '  col*=mix(spill*0.5,1.0,inner)*0.85;',
+  '  gl_FragColor=vec4(col*a,a);',
+  '}',
+].join('\n');
+
+// F — Blurred shards, deep spill
+var shaderF = [
+  'precision mediump float;',
+  'uniform float t;',
+  snoiseCode,
+  'void main(){',
+  '  vec2 uv=(gl_FragCoord.xy/256.0)*2.0-1.0;',
+  '  float r=length(uv);',
+  '  if(r>1.0){gl_FragColor=vec4(0);return;}',
+  '  float orbR=0.636;',
+  // 2-octave FBM at very low freq — big soft blobs
+  '  float n1=fbm2(vec3(uv*0.4,t*0.1))*0.5+0.5;',
+  '  float n2=fbm2(vec3(uv*0.35+3.0,t*0.07+10.0))*0.5+0.5;',
+  '  vec3 c1=vec3(0.22,0.05,0.42);',
+  '  vec3 c2=vec3(0.42,0.08,0.36);',
+  '  vec3 c3=vec3(0.12,0.22,0.48);',
+  '  vec3 col=mix(c1,c2,n1);col=mix(col,c3,n2*0.5);',
+  '  col+=vec3(0.55,0.4,0.78)*pow(max(n1*n2,0.0),1.3)*0.55;',
+  // Glowing center
+  '  col+=vec3(0.5,0.35,0.7)*exp(-r*r*3.0)*0.4;',
+  // Deep spill — soft blobs extend far
+  '  float inner=smoothstep(orbR+0.12,orbR-0.25,r);',
+  '  float outerFade=smoothstep(1.0,orbR*0.6,r);',
+  '  float noiseSpill=max(n1-0.2,0.0)*1.8;',
+  '  float a=inner*0.88+((1.0-inner)*outerFade*noiseSpill*0.7);',
+  '  a=min(a,0.9);',
+  '  col*=mix(outerFade*0.65,1.0,inner)*0.9;',
+  '  gl_FragColor=vec4(col*a,a);',
+  '}',
+].join('\n');
+
+var shaders = [shaderA, shaderB, shaderC, shaderD, shaderE, shaderF];
+var starts = [];
+var gls = [];
+var uts = [];
+
+for (var idx = 0; idx < 6; idx++) {
+  (function(i) {
+    var canvas = document.getElementById('c' + i);
+    var gl = canvas.getContext('webgl', { alpha: true, premultipliedAlpha: true });
+    if (!gl) return;
+    gls[i] = gl;
+
+    var vs = gl.createShader(gl.VERTEX_SHADER);
+    gl.shaderSource(vs, 'attribute vec2 p;void main(){gl_Position=vec4(p,0,1);}');
+    gl.compileShader(vs);
+
+    var fs = gl.createShader(gl.FRAGMENT_SHADER);
+    gl.shaderSource(fs, shaders[i]);
+    gl.compileShader(fs);
+
+    if (!gl.getShaderParameter(fs, gl.COMPILE_STATUS)) {
+      console.error('Shader ' + i + ' error:', gl.getShaderInfoLog(fs));
+      return;
+    }
+
+    var prg = gl.createProgram();
+    gl.attachShader(prg, vs);
+    gl.attachShader(prg, fs);
+    gl.linkProgram(prg);
+    gl.useProgram(prg);
+
+    var buf = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1,1,-1,-1,1,1,1]), gl.STATIC_DRAW);
+    var pos = gl.getAttribLocation(prg, 'p');
+    gl.enableVertexAttribArray(pos);
+    gl.vertexAttribPointer(pos, 2, gl.FLOAT, false, 0, 0);
+
+    uts[i] = gl.getUniformLocation(prg, 't');
+    gl.viewport(0, 0, 256, 256);
+    gl.enable(gl.BLEND);
+    gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+    starts[i] = performance.now();
+
+    function render() {
+      var elapsed = (performance.now() - starts[i]) / 1000.0;
+      gl.uniform1f(uts[i], elapsed);
+      gl.clearColor(0, 0, 0, 0);
+      gl.clear(gl.COLOR_BUFFER_BIT);
+      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+      requestAnimationFrame(render);
+    }
+    render();
+  })(idx);
+}
+</script>
+</body>
+</html>
